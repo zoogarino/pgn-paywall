@@ -139,7 +139,7 @@ function Sidebar({ userState, onPremium }: { userState: UserState; onPremium: ()
   ] as const;
   return (
     <div className="min-h-full bg-white">
-      <div className="bg-gold px-5 pb-6 pt-12">
+      <div className="bg-gold-gradient px-5 pb-6 pt-12">
         <div className="flex items-center gap-3">
           <img src={logo.url} alt="Pocket Guide Namibia logo" className="h-14 w-14 rounded-full bg-white p-1.5" />
           <div className="min-w-0">
@@ -152,7 +152,7 @@ function Sidebar({ userState, onPremium }: { userState: UserState; onPremium: ()
       </div>
       <nav className="p-3">
         <button onClick={onPremium} className="mb-2 flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-gold bg-gold/10 px-4 text-left text-navy">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-gold"><Star className="h-4 w-4 fill-white text-white" aria-hidden /></span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-gold-gradient"><Star className="h-4 w-4 fill-white text-white" aria-hidden /></span>
           <span className="font-display">Pocket Guide Premium</span>
         </button>
         {items.map(([I, l]) => (
@@ -227,7 +227,7 @@ function PlanCard({ id, on, best, launch, onSelect }: { id: PlanId; on: boolean;
     <button role="radio" aria-checked={on} onClick={onSelect}
       className={`relative w-full rounded-2xl border-2 bg-white p-4 text-left shadow-card transition ${on ? "border-navy" : "border-mist"}`}>
       <div className="flex flex-wrap gap-1.5">
-        {best && <span className="rounded-full bg-sky-strong px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: "var(--sky-strong)" }}>Best value</span>}
+        {best && <span className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: "var(--sky-strong)" }}>Best value</span>}
         {id === "yearly" && launch && <span className="rounded-full bg-terracotta/15 px-2.5 py-0.5 text-xs text-brown">{LAUNCH_OFFER.label}</span>}
         {id === "trip_pass" && <span className="rounded-full bg-sand/30 px-2.5 py-0.5 text-xs text-brown">One trip, no renewal</span>}
       </div>
@@ -256,7 +256,7 @@ function PlanCard({ id, on, best, launch, onSelect }: { id: PlanId; on: boolean;
 function Success({ plan, onExplore, onManage }: { plan: PlanId; onExplore: () => void; onManage: () => void }) {
   return (
     <div className="flex min-h-full flex-col items-center px-6 pt-20 text-center">
-      <span className="grid h-24 w-24 place-items-center rounded-full bg-gold shadow-card"><Star className="h-12 w-12 fill-white text-white" aria-label="Premium star" /></span>
+      <span className="grid h-24 w-24 place-items-center rounded-full bg-gold-gradient shadow-card"><Star className="h-12 w-12 fill-white text-white" aria-label="Premium star" /></span>
       <h1 className="mt-6 text-3xl text-navy">Welcome to Premium</h1>
       <p className="mt-2 text-muted-foreground">{PLANS[plan].name} is active. Here's what's unlocked:</p>
       <BenefitChecklist />
@@ -286,7 +286,7 @@ function Status({ kind, plan, onBack, onPrimary }: { kind: "active" | "expired";
     <div className="min-h-full px-6 pt-6 pb-8">
       <button onClick={onBack} aria-label="Back to menu" className="grid h-11 w-11 place-items-center rounded-full text-navy"><Menu className="h-6 w-6" /></button>
       <div className="mt-4 flex flex-col items-center text-center">
-        <span className={`grid h-20 w-20 place-items-center rounded-full ${kind === "active" ? "bg-gold" : "bg-mist"}`}>
+        <span className={`grid h-20 w-20 place-items-center rounded-full ${kind === "active" ? "bg-gold-gradient" : "bg-mist"}`}>
           <Star className="h-10 w-10 fill-white text-white" aria-label="Premium star" />
         </span>
         <h1 className="mt-5 text-2xl text-navy">{kind === "active" ? "You're a Premium user" : "Your Premium access has ended"}</h1>
