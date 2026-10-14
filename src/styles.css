@@ -51,6 +51,18 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-sky: var(--sky);
+  --color-navy: var(--navy);
+  --color-steel: var(--steel);
+  --color-pale: var(--pale);
+  --color-terracotta: var(--terracotta);
+  --color-brown: var(--brown);
+  --color-clay: var(--clay);
+  --color-sand: var(--sand);
+  --color-mist: var(--mist);
+  --color-gold: var(--gold);
+  --font-display: "League Spartan", sans-serif;
+  --font-sans: "Questrial", sans-serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -62,19 +74,33 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 1rem;
+  --sky: #16b4f3;
+  --sky-strong: #0b7fb0;
+  --navy: #014aae;
+  --steel: #5b89c6;
+  --pale: #c3e9ff;
+  --terracotta: #e18343;
+  --brown: #814223;
+  --clay: #b0755c;
+  --sand: #f1ad69;
+  --mist: #dddce6;
+  --gold: #fac60e;
+  --gradient-gold: linear-gradient(135deg, #ffe49d, #fac60e);
+  --gradient-dune: linear-gradient(160deg, #f1ad69, #e18343 60%, #814223);
+  --shadow-card: 0 8px 24px -12px rgb(1 74 174 / 0.25);
+  --background: #eef8ff;
+  --foreground: #013a8a;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: #014aae;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
+  --muted-foreground: #3d6aa8;
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
@@ -141,4 +167,17 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@utility bg-gold-gradient { background-image: var(--gradient-gold); }
+@utility bg-dune { background-image: var(--gradient-dune); }
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility btn-cta {
+  background: var(--sky-strong); color: #fff; font-weight: 700; border-radius: 9999px; min-height: 52px;
+  &:hover { background: var(--navy); }
+}
+@layer base {
+  body { font-family: var(--font-sans); }
+  h1,h2,h3 { font-family: var(--font-display); font-weight: 700; }
+  :focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 }
