@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   X, Star, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut,
-  Route as RouteIcon, FileDown, BellRing, Siren, Check, Leaf, ShieldCheck, ChevronDown, Loader2, Menu, Wifi, BatteryFull, Signal,
+  Route as Check, Leaf, ShieldCheck, ChevronDown, Loader2, Menu, Wifi, BatteryFull, Signal,
 } from "lucide-react";
 import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
