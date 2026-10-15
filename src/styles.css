@@ -228,3 +228,7 @@
   h1,h2,h3 { font-family: var(--font-display); font-weight: 700; }
   :focus-visible { outline: 2px solid var(--pgn-link); outline-offset: 2px; }
 }
+@utility gold-outline {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--pgn-on-dark), var(--pgn-on-dark)) padding-box, var(--gradient-gold) border-box;
+}
