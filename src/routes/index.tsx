@@ -15,7 +15,6 @@ export const Route = createFileRoute("/")({
     { property: "og:title", content: "Pocket Guide Premium — Namibia travel plans" },
     { property: "og:description", content: "Explore Namibia with custom trips, printable itineraries and Premium map filtering." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
-    { property: "og:image", content: hero.url }, { name: "twitter:image", content: hero.url },
   ] }), component: Prototype,
 });
 type Screen = "sidebar" | "paywall" | "success" | "active" | "expired" | "saved" | "style" | "map" | "alerts" | "rental" | "inquiry_sent";
