@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep all Premium offer settings, prices, feature eligibility, and billing copy in `src/lib/paywall-config.ts`; shared derivation prevents inconsistent purchase claims.
+- Premium screens are an in-phone simulated flow on the index route, with reusable controls and a separate mock map module; no real purchases, notification registrations or rental submissions occur.
+- Map filters are React state cleared on loss of Premium access; free search and pin details never pass through a purchase gate.
