@@ -3,4 +3,6 @@
 - [x] Update per-plan paywall, sticky purchase bar, checkout and access screens.
 - [x] Add alert notification sheet, map filtering and free search/details.
 - [x] Add non-blocking rental inquiry confirmation nudge and live controls.
-- [x] Verify flows, status transitions, and desktop/mobile layout.
+- [x] Verify flows, status transitions, and desktop/mobile layout.# Phase 1 annual-only
+- [x] Annual-only $9.99 then $44.99 founding offer; Trip Pass/Monthly behind switches.
+- [x] Grouped features, Sky Outlook, gold-only accent, rental pop-up, renewal safeguards, new controls.
