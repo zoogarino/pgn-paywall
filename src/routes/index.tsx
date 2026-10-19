@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck } from "lucide-react";
+import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck } from "lucide-react";
 import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
-import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FOUNDING_BADGE, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, planExtras, nudgeCopy, alertsSheetTitle, launchEnabled, fmtDate, visiblePlans, resolveHighlight, offerEndLine, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
+import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, type PaywallFeature, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Pocket Guide Premium — Namibia travel plans" },
@@ -65,7 +65,7 @@ function Prototype() {
     else if (userState === "active") { setScreen("saved"); toast(t === "pdf" ? "PDF export is available (simulated)" : "New trip created (simulated)"); }
     else openPaywall(t, "sidebar");
   };
-  const applyUser = (u: UserState) => { setUserState(u); dismiss(); if (u !== "active") { setFilter(null); setAlertsOn(false); setSkyOn(false); } setScreen(u === "active" ? "active" : u === "expired" ? "expired" : "sidebar"); };
+  const applyUser = (u: UserState) => { setUserState(u); setSettings(st => ({ ...st, eligible: u !== "expired" })); dismiss(); if (u !== "active") { setFilter(null); setAlertsOn(false); setSkyOn(false); } setScreen(u === "active" ? "active" : u === "expired" ? "expired" : "sidebar"); };
   const confirm = () => { setSheet("processing"); paymentTimer.current = setTimeout(() => { setSheet("none"); setPurchased(selected); setUserState("active"); setScreen("success"); }, 1400); };
   const back = () => { dismiss(); setScreen("sidebar"); };
   const changeSetting = <K extends keyof OfferSettings>(key: K, value: OfferSettings[K]) => setSettings(s => ({ ...s, [key]: value }));
@@ -89,7 +89,7 @@ function Prototype() {
         {screen === "rental" && <RentalForm premium={userState === "active"} onBack={back} onSubmit={() => setScreen("inquiry_sent")} />}
         {screen === "inquiry_sent" && <div className="p-5"><Back title={COPY.rentalSent} onBack={back} /><ShieldCheck className="mx-auto mt-16 h-16 w-16 text-success" /><h2 className="mt-5 text-center text-2xl">{COPY.rentalSent}</h2><p className="mt-3 text-center text-pgn-muted">{COPY.rentalConfirmation}</p></div>}
       </div>
-      {screen === "paywall" && <footer className="shrink-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={() => setSheet("checkout")}>{ctaLabel(selected, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-navy" aria-live="polite">{summary(selected, settings)}</p><PurchaseLinks /></footer>}
+      {screen === "paywall" && <footer className="shrink-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={() => setSheet("checkout")}>{ctaLabel(selected, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted" aria-live="polite">{summary(selected, settings)}</p><PurchaseLinks /></footer>}
       {rentalPopup && screen === "rental" && <section aria-label="Rental Premium offer" className="absolute bottom-4 left-3 right-3 animate-in slide-in-from-bottom rounded-lg border border-warm-border bg-on-dark p-4 shadow-card motion-reduce:animate-none"><Action aria-label="Dismiss" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={() => setRentalPopup(false)}><X /></Action><p className="pr-6 text-sm text-navy">{COPY.rentalNudge}</p><div className="mt-3 flex gap-2"><Primary onClick={() => { setRentalPopup(false); openPaywall("rental"); }}>{COPY.seePremium}</Primary><Action className="shrink-0 text-link" onClick={() => setRentalPopup(false)}>{COPY.notNow}</Action></div></section>}
       {sheet === "notify" && <NotifySheet title={alertsSheetTitle()} body={COPY.alertsBody} done={notified.alerts} onNotify={() => setNotified(n => ({ ...n, alerts: true }))} onDismiss={dismiss} onPlans={userState !== "active" ? () => openPaywall("alerts") : undefined} />}
       {sheet === "sky_notify" && <NotifySheet title={COPY.skySheetTitle} body={COPY.skyBody} done={notified.sky} onNotify={() => setNotified(n => ({ ...n, sky: true }))} onDismiss={dismiss} onPlans={userState !== "active" ? () => openPaywall("sky") : undefined} />}
@@ -109,21 +109,46 @@ function Sidebar({ userState, onPremium, onMap, onAlerts, onRental }: { userStat
   return <div className="min-h-full"><div className="bg-navy px-5 pb-6 pt-8"><div className="flex items-center gap-3"><img src={logo.url} alt="Pocket Guide Namibia logo" className="h-14 w-14 rounded-full bg-on-dark p-1.5" /><div><p className="font-display text-lg text-on-dark">Traveller</p><p className="text-sm text-on-dark">{userState === "active" ? "Premium" : "Free plan"}</p></div></div></div><nav className="space-y-2 p-3"><Action onClick={onPremium} className="gold-outline min-h-12 w-full justify-start rounded-2xl px-4 text-navy"><PremiumStar /><span className="font-display">Pocket Guide Premium</span></Action>{items.map(([Icon, label]) => <Action key={label} onClick={label === "Map Options" ? onMap : label === "Settings" ? onAlerts : () => toast(`${label} (prototype)`)} className="relative min-h-12 w-full justify-start overflow-hidden rounded-2xl border border-warm-border bg-on-dark px-4 text-navy">{["Travel Advice", "How to use the App", "About app", "Settings"].includes(label) && <span className="absolute inset-y-0 left-0 w-1 bg-terracotta" />}<Icon className="text-warm-brown" />{label}</Action>)}<Action onClick={onMap} className="min-h-11 w-full text-link">Open map</Action><Action onClick={onRental} className="min-h-11 w-full text-link">{COPY.rentalTitle}</Action></nav></div>;
 }
 function Paywall({ trigger, settings, selected, highlight, plans, onSelect, onClose }: { trigger: Trigger; settings: OfferSettings; selected: PlanId; highlight: PlanId; plans: PlanId[]; onSelect: (p: PlanId) => void; onClose: () => void }) {
-  const copy = TRIGGER_COPY[trigger];
+  const copy = paywallCopy(trigger, settings);
   const single = plans.length === 1;
-  return <div className="pb-6"><div className="relative h-44 bg-sand"><img src={hero.url} alt="Paraglider over Namib dunes" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/0 to-transparent" /><Action onClick={onClose} aria-label="Close paywall" className="absolute left-4 top-4 h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action><img src={logo.url} alt="Pocket Guide Namibia logo" className="absolute bottom-0 left-1/2 h-16 w-16 -translate-x-1/2 translate-y-1/3 rounded-full bg-on-dark p-2" /></div><div className="px-4 pt-8"><p className="text-center text-xs text-warm-brown">Pocket Guide Premium</p><h1 className="mt-2 text-center text-[28px] leading-tight">{copy.headline}</h1><p className="mt-2 text-center text-sm text-pgn-muted">{copy.sub}</p>
-    {single ? <div className="mt-6"><PlanCard id={plans[0] ?? "yearly"} settings={settings} on best={false} single /></div> : <div role="radiogroup" aria-label="Choose a plan" className="mt-6 space-y-3">{plans.map(id => <PlanCard key={id} id={id} settings={settings} on={selected === id} best={highlight === id} onSelect={() => onSelect(id)} />)}</div>}
-    <p className="mt-4 text-xs leading-relaxed text-pgn-muted">{COPY.alertsDisclaimer}</p><div className="mt-5 flex gap-2 border-y border-warm-border py-4"><ShieldCheck className="h-5 w-5 shrink-0 text-warm-brown" /><p className="text-xs leading-relaxed">{COPY.alwaysFree}</p></div><div className="mt-4 flex gap-2"><Leaf className="h-4 w-4 shrink-0 text-warm-brown" /><p className="text-xs text-pgn-muted">{COPY.conservation}</p></div><p className="mt-4 text-center text-xs text-pgn-muted">{COPY.sharedCancellation}</p></div></div>;
-}
-function PlanCard({ id, on, best, settings, onSelect, single = false }: { id: PlanId; on: boolean; best: boolean; settings: OfferSettings; onSelect?: () => void; single?: boolean }) {
-  const dark = id === "trip_pass";
+  const id = single ? plans[0] ?? "yearly" : selected;
+  const badge = badgeText(id, settings);
   const [main, then] = priceParts(id, settings);
-  const body = <><div className="flex items-start justify-between gap-2"><div className="min-w-0">{best && id === "trip_pass" && <span className="mb-2 inline-block rounded bg-sand px-2 py-1 text-xs text-navy">{COPY.best}</span>}{id === "yearly" && launchEnabled(settings) && <span className="mb-2 inline-block rounded bg-gold-gradient px-2 py-1 text-xs text-navy">{FOUNDING_BADGE}</span>}<h2 className="text-xl">{PLANS[id].name}</h2></div>{!single && <span className={`mt-1 h-5 w-5 shrink-0 rounded-full border-2 ${on ? "border-terracotta bg-terracotta" : dark ? "border-on-dark" : "border-input-border"}`} />}</div>
-    <p className="mt-2 text-lg font-bold leading-snug">{main}{then && <> <span className="whitespace-nowrap">{then}</span></>}</p>
-    {id === "yearly" && launchEnabled(settings) && <p className="mt-2 text-xs leading-relaxed text-pgn-muted">{COPY.foundingLine}{offerEndLine(settings)}</p>}
-    <Checklist plan={id} settings={settings} extras={planExtras(id, settings)} dark={dark} /><p className={`mt-4 border-t pt-3 text-xs leading-relaxed ${dark ? "border-on-dark/25" : "border-warm-border"}`}>{disclosure(id, settings)}</p>{id !== "trip_pass" && <p className="mt-2 text-xs text-pgn-muted">{COPY.cancellation}</p>}</>;
-  const cls = `block w-full rounded-lg border-2 p-4 text-left shadow-card ${on ? "border-terracotta" : "border-warm-border"} ${dark ? "bg-navy text-on-dark" : "bg-on-dark text-navy"}`;
-  return single ? <section aria-label={PLANS[id].name} className={cls}>{body}</section> : <Action role="radio" aria-checked={on} onClick={onSelect} className={cls}>{body}</Action>;
+  const trial = id === "yearly" ? trialLine(settings) : null;
+  return <div className="pb-5"><div className="relative h-[20dvh] max-h-40 bg-sand [@media(max-height:700px)]:h-[13dvh]"><img src={hero.url} alt="Paraglider over Namib dunes" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/0 to-transparent" /><Action onClick={onClose} aria-label="Close paywall" className="absolute left-4 top-3 h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action><img src={logo.url} alt="Pocket Guide Namibia logo" className="absolute bottom-0 left-1/2 h-11 w-11 -translate-x-1/2 translate-y-1/3 rounded-full bg-on-dark p-1.5" /></div>
+    <div className="px-4 pt-5"><h1 className="text-center text-[24px] leading-tight text-navy">{copy.headline}</h1><p className="mt-1 text-center text-sm text-pgn-muted">{copy.sub}</p>
+    {single ? <section aria-label={PLANS[id].name} className="mt-4 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card">
+      {badge && <span className="mb-1.5 inline-block rounded bg-gold-gradient px-2 py-0.5 text-xs text-pgn-dark">{badge}</span>}
+      <h2 className="text-base text-pgn-dark">{PLANS[id].name}</h2>
+      <p className="mt-0.5 text-lg font-bold leading-snug text-navy">{main}{then && <> <span className="whitespace-nowrap">{then}</span></>}</p>
+      {trial && <p className="mt-0.5 text-xs text-pgn-muted">{trial}</p>}
+      <FeatureList selected={id} settings={settings} trigger={trigger} />
+      <p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted">{finePrint(id, settings)}</p>
+    </section> : <>
+      <div role="radiogroup" aria-label="Choose a plan" className="mt-4 space-y-2">{plans.map(p => <PlanRow key={p} id={p} settings={settings} on={selected === p} best={highlight === p} onSelect={() => onSelect(p)} />)}</div>
+      <section aria-label="What's included" className="mt-3 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card">{trial && <p className="text-xs text-pgn-muted">{trial}</p>}<FeatureList selected={selected} settings={settings} trigger={trigger} /><p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted" aria-live="polite">{finePrint(selected, settings)}</p></section>
+    </>}
+    <div className="mt-5 flex gap-2 border-y border-warm-border py-4"><ShieldCheck className="h-5 w-5 shrink-0 text-warm-brown" /><p className="text-xs leading-relaxed text-pgn-dark">{COPY.alwaysFree}</p></div><div className="mt-4 flex gap-2"><Leaf className="h-4 w-4 shrink-0 text-warm-brown" /><p className="text-xs text-pgn-muted">{COPY.conservation}</p></div>
+    <p className="mt-4 text-[11px] leading-relaxed text-pgn-muted">{COPY.alertsDisclaimer}</p></div></div>;
+}
+function PlanRow({ id, on, best, settings, onSelect }: { id: PlanId; on: boolean; best: boolean; settings: OfferSettings; onSelect: () => void }) {
+  const badge = badgeText(id, settings);
+  return <button type="button" role="radio" aria-checked={on} onClick={onSelect} className={`flex w-full items-start gap-3 rounded-lg border-2 bg-on-dark p-3 text-left text-pgn-dark ${on ? "border-terracotta" : "border-warm-border"}`}>
+    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-terracotta" : "border-input-border"}`}>{on && <span className="h-2.5 w-2.5 rounded-full bg-terracotta" />}</span>
+    <span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-1.5"><span className="text-sm font-bold">{PLANS[id].name}</span>{best && id !== "yearly" && <span className="rounded bg-sand px-1.5 py-0.5 text-[10px] text-pgn-dark">{COPY.best}</span>}{badge && <span className="rounded bg-gold-gradient px-1.5 py-0.5 text-[10px] text-pgn-dark">{badge}</span>}</span>
+    <span className="block text-sm font-bold text-navy">{priceLabel(id, settings)}</span><span className="block text-[11px] text-pgn-muted">{summary(id, settings)}</span></span></button>;
+}
+function FeatureList({ selected, settings, trigger }: { selected: PlanId; settings: OfferSettings; trigger: Trigger }) {
+  const g = paywallFeatures(selected, settings, trigger);
+  const label = "mt-3 text-[11px] uppercase tracking-wide text-warm-brown";
+  const row = (f: PaywallFeature, coming: boolean) => <li key={f.id} className={`flex items-start gap-2 rounded-md ${f.highlight ? "-mx-1.5 bg-sand px-1.5 py-1" : ""}`}>
+    {coming ? <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warm-brown" /> : <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${f.available ? "bg-terracotta text-on-dark" : "bg-toggle-off text-pgn-dark"}`}><Check className="h-3 w-3" /></span>}
+    <span className="min-w-0 flex-1"><span className={`${coming || !f.available ? "text-pgn-muted" : "text-pgn-dark"}`}>{f.name}</span>{f.tag && <span className="ml-1.5 inline-block rounded bg-sand px-1.5 py-0.5 text-[10px] text-warm-brown">{f.tag}</span>}
+    {f.desc && <span className="block truncate text-[11px] text-pgn-muted">{f.desc}</span>}
+    {!f.available && <span className="block text-[11px] text-pgn-muted">Not included in {PLANS[selected].name}</span>}</span></li>;
+  return <div>{g.included.length > 0 && <><p className={label}>{COPY.includedToday}</p><ul className="mt-1.5 space-y-2 text-sm">{g.included.map(f => row(f, false))}</ul></>}
+    {g.early.length > 0 && <><p className={label}>Early access</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
+    {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
 }
 function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onMap }: { kind: "active" | "expired" | "success"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onMap: () => void }) {
   const expired = kind === "expired";
@@ -143,15 +168,15 @@ function RentalForm({ premium, onBack, onSubmit }: { premium: boolean; onBack: (
   return <div className="p-5 pb-48"><Back title={COPY.rentalTitle} onBack={onBack} />{premium && <p className="mt-5 flex items-center gap-2 rounded-full bg-sand px-3 py-2 text-xs text-navy"><BadgeCheck className="h-4 w-4 shrink-0 text-warm-brown" />{COPY.rentalChip}</p>}<form onSubmit={e => { e.preventDefault(); onSubmit(); }} className="mt-7 space-y-5">{[["Name", "text"], ["Pick-up date", "date"], ["Return date", "date"]].map(([label, type]) => <label className="block text-sm text-warm-brown" key={label}>{label}<input required name={label} type={type} className="mt-2 h-12 w-full rounded-lg border border-input-border bg-on-dark px-3 text-navy" /></label>)}<Primary type="submit">Submit</Primary></form></div>;
 }
 function Seg<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
-  return <fieldset className="mt-4"><legend className="mb-1.5 text-xs text-ctl-sub">{label}</legend><div className="flex flex-wrap gap-1.5">{options.map(([v, l]) => <Action key={v} onClick={() => onChange(v)} aria-pressed={value === v} className={`min-h-9 rounded-full border px-3 text-sm ${value === v ? "border-ctl-ink bg-ctl-ink text-ctl-panel" : "border-ctl-line bg-ctl-panel text-ctl-ink"}`}>{l}</Action>)}</div></fieldset>;
+  return <fieldset className="mt-4"><legend className="mb-1.5 text-xs text-ctl-sub">{label}</legend><div className="flex flex-wrap gap-1.5">{options.map(([v, l]) => <button type="button" key={v} onClick={() => onChange(v)} aria-pressed={value === v} className={`min-h-9 rounded-full border px-3 text-sm ${value === v ? "border-ctl-ink bg-ctl-ink text-ctl-panel" : "border-ctl-line bg-ctl-panel text-ctl-ink"}`}>{l}</button>)}</div></fieldset>;
 }
 const PLAN_LABEL: Record<PlanId, string> = { trip_pass: "Trip Pass", yearly: "Yearly", monthly: "Monthly" };
 function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; settings: OfferSettings; changeSetting: <K extends keyof OfferSettings>(k: K, v: OfferSettings[K]) => void; highlight: PlanId; plans: PlanId[]; setHighlight: (p: PlanId) => void; userState: UserState; applyUser: (u: UserState) => void; resetNotify: () => void; resetRental: () => void; onStyle: () => void }) {
   const [open, setOpen] = useState(true);
-  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["trial", "Yearly free trial"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"]] as const;
+  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["trial", "Yearly free trial (demo only)"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"]] as const;
   return <aside className="m-4 rounded-lg bg-ctl-panel p-5 text-ctl-ink shadow-card md:m-0 md:max-h-[844px] md:w-80 md:overflow-y-auto"><Action onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 w-full justify-between px-0 text-ctl-ink"><h2 className="text-lg">Prototype controls</h2><ChevronDown className={open ? "rotate-180" : ""} /></Action>{open && <>
     <Seg label="Trigger context" value={p.trigger} onChange={p.applyTrigger} options={[["sidebar", "Sidebar"], ["trip3", "Trip #3"], ["pdf", "PDF export"], ["alerts", "Live alerts"], ["sky", "Sky Outlook"], ["nudge", "Post-save nudge"], ["map", "Map filter"], ["rental", "Rental inquiry"]]} />
-    {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={p.settings[key]} onChange={on => p.changeSetting(key, on)} /></div>)}
+    {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={key === "trial" ? p.settings.trial && p.settings.eligible : p.settings[key]} disabled={(key === "eligible" && p.userState === "expired") || (key === "trial" && !p.settings.eligible)} onChange={on => p.changeSetting(key, on)} /></div>)}
     {p.plans.length > 1 && <Seg label="Highlighted plan" value={p.highlight} onChange={p.setHighlight} options={p.plans.map(id => [id, PLAN_LABEL[id]] as [PlanId, string])} />}
     <label className="mt-4 block text-xs text-ctl-sub">Offer end date (blank = none)<input value={p.settings.offerEnd ?? ""} onChange={e => p.changeSetting("offerEnd", e.target.value || null)} placeholder="e.g. 31 March 2027" className="mt-1.5 h-10 w-full rounded-lg border border-ctl-line bg-ctl-panel px-3 text-sm text-ctl-ink" /></label>
     <Seg<AlertsStatus> label="Live alerts status" value={p.settings.alerts} onChange={v => p.changeSetting("alerts", v)} options={[["coming_soon", "Coming soon"], ["early_access", "Early access"], ["released", "Released"]]} />
