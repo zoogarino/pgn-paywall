@@ -24,18 +24,21 @@ export const RENTAL_DISCOUNT_PLANS: PlanId[] = ["trip_pass", "yearly"];
 export const RENTAL_DISCOUNT_PERCENT = 3;
 export const LIVE_ALERTS_STATUS: AlertsStatus = "coming_soon";
 export const LIVE_ALERTS_RELEASE_LABEL = "February 2027";
+export const SKY_ALERTS_RELEASE_LABEL: string | null = null;
 export const SKY_ALERTS_STATUS: SkyStatus = "released";
 export const PRE_RENEWAL_REMINDER_ON = false;
 export const RENEWAL_REMINDER_DAYS = 14;
 export const FREE_CAP_TRIPS = 2;
 export const PREMIUM_CAP_TRIPS = 20;
 export const FEATURE_NAMES = {
-  pin_filter: { name: "Location filter", desc: "Filter the map to what matters" }, // placeholder name
-  sky_alerts: { name: "Sky Outlook", desc: "Alerts for meteor showers and other sky events, plus multi-day weather forecasts" }, // placeholder name
-  live_alerts: { name: "Live location alerts", desc: "Alerts when you're near park gates and safety zones" },
+  pin_filter: { name: "Location filter", desc: "Filter the map to what matters", short: "Filter the map to what matters" }, // placeholder name
+  sky_alerts: { name: "Sky Outlook", desc: "Alerts for meteor showers and other sky events, plus multi-day weather forecasts", short: "Sky events and multi-day forecasts" }, // placeholder name
+  live_alerts: { name: "Live location alerts", desc: "Alerts when you're near park gates and safety zones", short: "Near park gates and safety zones" },
 } as const;
-export type OfferSettings = { launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null };
-export const DEFAULT_SETTINGS: OfferSettings = { launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE };
+// eligible: production reads intro-offer eligibility from the store / RevenueCat, never from user state.
+// trial: demo only. The trial cannot be combined with the intro price as an App Store introductory offer; to be decided with the developers.
+export type OfferSettings = { eligible: boolean; launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null };
+export const DEFAULT_SETTINGS: OfferSettings = { eligible: true, launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE };
 export const launchEnabled = (s: OfferSettings) => s.launch;
 export const visiblePlans = (s: OfferSettings) => PLAN_ORDER.filter(p => p === "yearly" || (p === "trip_pass" ? s.showTripPass : s.showMonthly));
 export const resolveHighlight = (wanted: PlanId | null, s: OfferSettings): PlanId => { const v = visiblePlans(s); return wanted && v.includes(wanted) ? wanted : v[0] ?? "yearly"; };
@@ -45,6 +48,7 @@ export const COPY = {
   sharedCancellation: "Subscriptions can be cancelled anytime in your App Store or Google Play account settings.",
   alwaysFree: "Still free for everyone: the offline map with all pins and search, 5 curated trips, road conditions forum, travel advice and emergency numbers.",
   conservation: "A portion of every subscription supports conservation and community partners in Namibia.",
+  // Placeholder wording: pending legal review.
   // Placeholder wording: pending legal review (and a check of the weather data provider's terms).
   alertsDisclaimer: "Alerts and forecasts depend on your device's GPS, connection and settings and on third-party data, and may be delayed, change, or be unavailable in some conditions.",
   foundingLine: "Founding member price for early Premium members.",
@@ -67,7 +71,8 @@ export const COPY = {
 };
 const base = { headline: "Your Namibia, without limits.", sub: "Plan more, print it, and stay informed on the road." };
 export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = {
-  sidebar: base, nudge: base, rental: base,
+  sidebar: base, nudge: base,
+  rental: { headline: "Planning to self-drive?", sub: `Premium members get ${RENTAL_DISCOUNT_PERCENT}% off car rentals booked through Pocket Guide.` },
   trip3: { headline: `You've reached your ${FREE_CAP_TRIPS} free trips.`, sub: `Premium lets you plan up to ${PREMIUM_CAP_TRIPS}.` },
   pdf: { headline: "Take your itinerary offline, on paper.", sub: "Export and print any trip with Premium." },
   alerts: { headline: "Stay informed as you drive.", sub: "Get alerts when you're near park gates and safety zones." },
@@ -91,24 +96,80 @@ export function planExtras(id: PlanId, s: OfferSettings) {
   if (id === "monthly") return ["Renews monthly until you cancel"];
   return [...(s.trial ? [`${PLANS.yearly.trialDays}-day free trial`] : []), `Auto-renews yearly at ${money(PLANS.yearly.price)} until you cancel`];
 }
-const yearlyIntro = (s: OfferSettings) => `${s.trial ? `${PLANS.yearly.trialDays}-day free trial, then ` : ""}${launchEnabled(s) ? `${money(PLANS.yearly.firstYearPrice)} for the first year, then ` : ""}`;
-export function disclosure(id: PlanId, s: OfferSettings) {
+export const introShown = (s: OfferSettings) => s.eligible && s.launch;
+export const trialShown = (s: OfferSettings) => s.eligible && s.trial;
+const STORE_CANCEL = "Renews automatically until you cancel in your App Store or Google Play settings.";
+export function finePrint(id: PlanId, s: OfferSettings) {
   if (id === "trip_pass") return `One-time payment of ${money(PLANS.trip_pass.price)} for ${PLANS.trip_pass.days} days of Premium. Does not auto-renew.`;
-  if (id === "monthly") return `${money(PLANS.monthly.price)} per month. Renews automatically each month until you cancel.`;
-  return `${yearlyIntro(s)}${money(PLANS.yearly.price)} per year. Renews automatically until you cancel.`.replace(/^./, c => c.toUpperCase());
+  if (id === "monthly") return `${money(PLANS.monthly.price)}/month. Renews automatically each month until you cancel in your App Store or Google Play settings.`;
+  const trial = trialShown(s) ? `${PLANS.yearly.trialDays}-day free trial, then ` : "";
+  const intro = introShown(s) ? `${money(PLANS.yearly.firstYearPrice)} for the first year, then ` : "";
+  return `${trial}${intro}${money(PLANS.yearly.price)}/year. ${STORE_CANCEL}`;
 }
-// Sticky-bar summary, built from the same pieces as the card's terms line.
+export const disclosure = finePrint;
+// Short summary under the CTA, built from the same pieces as the fine print.
 export function summary(id: PlanId, s: OfferSettings) {
-  if (id !== "yearly") return disclosure(id, s);
-  return `${yearlyIntro(s)}${money(PLANS.yearly.price)}/year. Auto-renews until you cancel.`.replace(/^./, c => c.toUpperCase());
+  if (id === "trip_pass") return `One-time ${money(PLANS.trip_pass.price)} · ${PLANS.trip_pass.days} days · no auto-renewal`;
+  if (id === "monthly") return `${money(PLANS.monthly.price)}/month. Auto-renews until you cancel.`;
+  const trial = trialShown(s) ? `${PLANS.yearly.trialDays} days free, then ` : "";
+  const intro = introShown(s) ? `${money(PLANS.yearly.firstYearPrice)} first year, then ` : "";
+  return `${trial}${intro}${money(PLANS.yearly.price)}/year. Auto-renews until you cancel.`.replace(/^./, c => c.toUpperCase());
 }
-export function ctaLabel(id: PlanId, _s: OfferSettings) {
-  return id === "trip_pass" ? "Get Trip Pass" : id === "monthly" ? "Subscribe monthly" : COPY.getPremium;
+export function ctaLabel(id: PlanId, s: OfferSettings) {
+  if (id === "trip_pass") return `Get Trip Pass – ${money(PLANS.trip_pass.price)}`;
+  if (id === "monthly") return `Get Monthly – ${money(PLANS.monthly.price)}/month`;
+  if (!s.eligible) return `Renew Premium – ${money(PLANS.yearly.price)}/year`;
+  if (trialShown(s)) return `Start ${PLANS.yearly.trialDays}-day free trial`;
+  return introShown(s) ? `Get Premium – ${money(PLANS.yearly.firstYearPrice)} first year` : `Get Premium – ${money(PLANS.yearly.price)}/year`;
 }
 export function priceParts(id: PlanId, s: OfferSettings): [string, string?] {
-  if (id === "trip_pass") return [`${money(PLANS.trip_pass.price)} · one-time payment · ${PLANS.trip_pass.days} days`];
+  if (id === "trip_pass") return [`${money(PLANS.trip_pass.price)} · one-time · ${PLANS.trip_pass.days} days`];
   if (id === "monthly") return [`${money(PLANS.monthly.price)}/month`];
-  return launchEnabled(s) ? [`${money(PLANS.yearly.firstYearPrice)} first year`, `then ${money(PLANS.yearly.price)}/year`] : [`${money(PLANS.yearly.price)}/year`];
+  return introShown(s) ? [`${money(PLANS.yearly.firstYearPrice)} first year`, `then ${money(PLANS.yearly.price)}/year`] : [`${money(PLANS.yearly.price)}/year`];
+}
+export const trialLine = (s: OfferSettings) => trialShown(s) ? `Free for ${PLANS.yearly.trialDays} days, then ${introShown(s) ? `${money(PLANS.yearly.firstYearPrice)} for the first year` : `${money(PLANS.yearly.price)}/year`}.` : null;
+// Gold badge: only with the intro price; end date only when OFFER_END_DATE is set.
+export function badgeText(id: PlanId, s: OfferSettings) {
+  if (id !== "yearly" || !introShown(s)) return null;
+  const end = s.offerEnd?.trim() ? ` · until ${s.offerEnd.trim()}` : "";
+  return `${trialShown(s) ? `${PLANS.yearly.trialDays}-day free trial · ` : ""}${FOUNDING_BADGE}${end}`;
+}
+export const WELCOME_BACK = { headline: "Welcome back to Premium", sub: "Pick up where you left off." };
+export function paywallCopy(t: Trigger, s: OfferSettings) {
+  if (!s.eligible && (t === "sidebar" || t === "nudge")) return WELCOME_BACK;
+  return TRIGGER_COPY[t];
+}
+// The order is a hypothesis; change it here only.
+export const FEATURE_ORDER = ["rental_discount", "custom_trips", "pdf_export", "location_filter", "sky_outlook"] as const;
+export type FeatureId = typeof FEATURE_ORDER[number] | "live_alerts";
+export const TRIGGER_FEATURE: Partial<Record<Trigger, FeatureId>> = { trip3: "custom_trips", pdf: "pdf_export", map: "location_filter", rental: "rental_discount", sky: "sky_outlook", alerts: "live_alerts" };
+export type PaywallFeature = { id: FeatureId; name: string; desc?: string | undefined; tag?: string; plans: PlanId[]; available: boolean; highlight: boolean };
+function catalogue(s: OfferSettings) {
+  const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
+  const notTrip = (st: string) => st === "coming_soon" ? all.filter(p => p !== "trip_pass") : all;
+  const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
+    { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide.", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
+    { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
+    { id: "pdf_export", name: "PDF export & print", plans: all, status: "released", date: null, enabled: true },
+    { id: "location_filter", name: FEATURE_NAMES.pin_filter.name, desc: FEATURE_NAMES.pin_filter.short, plans: all, status: "released", date: null, enabled: true },
+    { id: "sky_outlook", name: FEATURE_NAMES.sky_alerts.name, desc: FEATURE_NAMES.sky_alerts.short, plans: notTrip(s.sky), status: s.sky, date: SKY_ALERTS_RELEASE_LABEL, enabled: true },
+    { id: "live_alerts", name: FEATURE_NAMES.live_alerts.name, desc: FEATURE_NAMES.live_alerts.short, plans: notTrip(s.alerts), status: s.alerts, date: LIVE_ALERTS_RELEASE_LABEL, enabled: true },
+  ];
+  return list.filter(f => f.enabled);
+}
+// Shared list for the paywall: features offered by any visible plan; ones the selected plan lacks are marked unavailable.
+export function paywallFeatures(selected: PlanId, s: OfferSettings, trigger: Trigger) {
+  const visible = visiblePlans(s); const top = TRIGGER_FEATURE[trigger];
+  const groups = { included: [] as PaywallFeature[], early: [] as PaywallFeature[], coming: [] as PaywallFeature[] };
+  for (const f of catalogue(s)) {
+    if (!f.plans.some(p => visible.includes(p))) continue;
+    const item: PaywallFeature = { id: f.id, name: f.name, desc: f.desc, plans: f.plans, available: f.plans.includes(selected), highlight: f.id === top };
+    if (f.status === "released") groups.included.push(item);
+    else if (f.status === "early_access") groups.early.push({ ...item, tag: "Early access" });
+    else groups.coming.push(f.date ? { ...item, tag: f.date } : item);
+  }
+  for (const g of Object.values(groups)) { const i = g.findIndex(x => x.highlight); if (i > 0) g.unshift(...g.splice(i, 1)); }
+  return groups;
 }
 export const priceLabel = (id: PlanId, s: OfferSettings) => priceParts(id, s).join(" · ");
 export const offerEndLine = (s: OfferSettings) => s.offerEnd?.trim() ? ` Available until ${s.offerEnd.trim()}.` : "";
