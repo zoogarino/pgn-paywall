@@ -143,11 +143,11 @@ export function paywallCopy(t: Trigger, s: OfferSettings) {
 export const FEATURE_ORDER = ["rental_discount", "custom_trips", "pdf_export", "location_filter", "sky_outlook"] as const;
 export type FeatureId = typeof FEATURE_ORDER[number] | "live_alerts";
 export const TRIGGER_FEATURE: Partial<Record<Trigger, FeatureId>> = { trip3: "custom_trips", pdf: "pdf_export", map: "location_filter", rental: "rental_discount", sky: "sky_outlook", alerts: "live_alerts" };
-export type PaywallFeature = { id: FeatureId; name: string; desc?: string; tag?: string; plans: PlanId[]; available: boolean; highlight: boolean };
+export type PaywallFeature = { id: FeatureId; name: string; desc?: string | undefined; tag?: string; plans: PlanId[]; available: boolean; highlight: boolean };
 function catalogue(s: OfferSettings) {
   const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
   const notTrip = (st: string) => st === "coming_soon" ? all.filter(p => p !== "trip_pass") : all;
-  const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
+  const list: { id: FeatureId; name: string; desc?: string; plans: readonly PlanId[] | PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
     { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide.", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
     { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
     { id: "pdf_export", name: "PDF export & print", plans: all, status: "released", date: null, enabled: true },
