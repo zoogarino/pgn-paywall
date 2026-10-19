@@ -123,7 +123,7 @@ export function nudgeCopy(s: OfferSettings) {
   const list = inc.length ? `${inc.length > 1 ? ", " + inc.slice(0, -1).join(", ") : ""} and ${inc[inc.length - 1]}` : "";
   const included = inc.length ? `${prefix}${list}.` : `${prefix.replace(/, the /, " and the ")}.`;
   if (!coming.length) return included;
-  const cap = (x: string) => x[0].toUpperCase() + x.slice(1);
+  const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
   const comingText = coming.map(c => c === "live location alerts" ? `Live location alerts are coming ${LIVE_ALERTS_RELEASE_LABEL}` : `${cap(c)} is coming soon`).join(". ");
   return `${included} ${comingText}.`;
 }
