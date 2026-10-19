@@ -147,7 +147,7 @@ export type PaywallFeature = { id: FeatureId; name: string; desc?: string | unde
 function catalogue(s: OfferSettings) {
   const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
   const notTrip = (st: string) => st === "coming_soon" ? all.filter(p => p !== "trip_pass") : all;
-  const list: { id: FeatureId; name: string; desc?: string; plans: readonly PlanId[] | PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
+  const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
     { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide.", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
     { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
     { id: "pdf_export", name: "PDF export & print", plans: all, status: "released", date: null, enabled: true },
