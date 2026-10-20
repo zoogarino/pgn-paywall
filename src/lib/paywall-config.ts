@@ -91,7 +91,7 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
   map: { headline: "Filter the map to what matters.", sub: "Premium members see only what's relevant to their trip." },
 };
 export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
-export type FeatureItem = { name: string; desc?: string; tag?: string };
+export type FeatureItem = { name: string; desc?: string | undefined; tag?: string };
 export function featureGroups(id: PlanId, s: OfferSettings) {
   const groups = paywallFeatures(id, s, "sidebar");
   const available = (items: PaywallFeature[]): FeatureItem[] => items.filter(f => f.available);
