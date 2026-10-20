@@ -73,7 +73,7 @@ export const COPY = {
   search: "Search places", filterTitle: "Filter the map", filterTrip: "Only along my trip", showAll: "Show all", apply: "Apply",
   restore: "Restore purchases", terms: "Terms of Use", privacy: "Privacy Policy", eula: "EULA",
 };
-const base = { headline: "Your Namibia, without limits.", sub: "Plan more, print it, and stay informed on the road." };
+const base = { headline: "Your Namibia, without limits.", sub: "Your trips, your map, your way." };
 export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = {
   sidebar: base, nudge: base,
   rental: { headline: "Planning to self-drive?", sub: `Premium members get ${RENTAL_DISCOUNT_PERCENT}% off car rentals booked through Pocket Guide.` },
