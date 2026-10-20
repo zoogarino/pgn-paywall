@@ -12,5 +12,5 @@
 - [x] Verify status controls and Premium checklists.
 
 # Post-purchase Success screen
-- [ ] Replace confirmation layout, purchase-based billing, and contextual continuation.
-- [ ] Verify planned notification state, all offers, and 390×844 layout.
+- [x] Replace confirmation layout, purchase-based billing, and contextual continuation.
+- [x] Verify planned notification state, all offers, and 390×844 layout.
