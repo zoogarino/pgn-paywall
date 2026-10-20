@@ -8,5 +8,5 @@
 - [x] Grouped features, Sky Outlook, gold-only accent, rental pop-up, renewal safeguards, new controls.
 
 # Small content update
-- [ ] Update config feature names, ordering, Emergency Support statuses and disclaimer.
-- [ ] Verify status controls and Premium checklists.
+- [x] Update config feature names, ordering, Emergency Support statuses and disclaimer.
+- [x] Verify status controls and Premium checklists.
