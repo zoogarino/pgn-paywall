@@ -7,7 +7,7 @@ import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
-import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, type PaywallFeature, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
+import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Pocket Guide Premium — Namibia travel plans" },
@@ -131,7 +131,7 @@ function Paywall({ trigger, settings, selected, highlight, plans, onSelect, onCl
       <section aria-label="What's included" className="mt-3 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card">{trial && <p className="text-xs text-pgn-muted">{trial}</p>}<FeatureList selected={selected} settings={settings} trigger={trigger} /><p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted" aria-live="polite">{finePrint(selected, settings)}</p></section>
     </>}
     <div className="mt-5 flex gap-2 border-y border-warm-border py-4"><ShieldCheck className="h-5 w-5 shrink-0 text-warm-brown" /><p className="text-xs leading-relaxed text-pgn-dark">{COPY.alwaysFree}</p></div><div className="mt-4 flex gap-2"><Leaf className="h-4 w-4 shrink-0 text-warm-brown" /><p className="text-xs text-pgn-muted">{COPY.conservation}</p></div>
-    <p className="mt-4 text-[11px] leading-relaxed text-pgn-muted">{COPY.alertsDisclaimer}</p></div></div>;
+    <p className="mt-4 text-[11px] leading-relaxed text-pgn-muted">{featureDisclaimer(selected, settings)}</p></div></div>;
 }
 function PlanRow({ id, on, best, settings, onSelect }: { id: PlanId; on: boolean; best: boolean; settings: OfferSettings; onSelect: () => void }) {
   const badge = badgeText(id, settings);
@@ -149,7 +149,7 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
     {f.desc && <span className="block truncate text-[11px] text-pgn-muted">{f.desc}</span>}
     {!f.available && <span className="block text-[11px] text-pgn-muted">Not included in {PLANS[selected].name}</span>}</span></li>;
   return <div>{g.included.length > 0 && <><p className={label}>{COPY.includedToday}</p><ul className="mt-1.5 space-y-2 text-sm">{g.included.map(f => row(f, false))}</ul></>}
-    {g.early.length > 0 && <><p className={label}>Early access</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
+    {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
     {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
 }
 function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onMap }: { kind: "active" | "expired" | "success"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onMap: () => void }) {
@@ -183,6 +183,7 @@ function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; set
     <label className="mt-4 block text-xs text-ctl-sub">Offer end date (blank = none)<input value={p.settings.offerEnd ?? ""} onChange={e => p.changeSetting("offerEnd", e.target.value || null)} placeholder="e.g. 31 March 2027" className="mt-1.5 h-10 w-full rounded-lg border border-ctl-line bg-ctl-panel px-3 text-sm text-ctl-ink" /></label>
     <Seg<AlertsStatus> label={COPY.liveGuideStatus} value={p.settings.alerts} onChange={v => p.changeSetting("alerts", v)} options={[["coming_soon", COPY.comingSoon], ["early_access", "Early access"], ["released", "Released"]]} />
     <Seg<SkyStatus> label={COPY.skyStatus} value={p.settings.sky} onChange={v => p.changeSetting("sky", v)} options={[["released", "Released"], ["coming_soon", COPY.comingSoon]]} />
+    <Seg<AlertsStatus> label={COPY.emergencyStatus} value={p.settings.emergency} onChange={v => p.changeSetting("emergency", v)} options={[["coming_soon", COPY.comingSoon], ["early_access", COPY.earlyAccess], ["released", COPY.released]]} />
     <Seg label="User state" value={p.userState} onChange={p.applyUser} options={[["free", "Free"], ["active", "Premium active"], ["expired", "Expired"]]} />
     <Action onClick={p.resetNotify} className="mt-4 min-h-11 w-full rounded-full border border-ctl-line text-ctl-ink">Reset Notify me</Action>
     <Action onClick={p.resetRental} className="mt-2 min-h-11 w-full rounded-full border border-ctl-line text-ctl-ink">Reset rental pop-up</Action>

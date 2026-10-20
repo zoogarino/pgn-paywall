@@ -12,3 +12,5 @@
 - Keep all Premium offer settings, prices, feature eligibility, and billing copy in `src/lib/paywall-config.ts`; shared derivation prevents inconsistent purchase claims.
 - Premium screens are an in-phone simulated flow on the index route, with reusable controls and a separate mock map module; no real purchases, notification registrations or rental submissions occur.
 - Map filters are React state cleared on loss of Premium access; free search and pin details never pass through a purchase gate.
+
+- Derive paywall and active checklist groups from one feature catalogue and configured ordering; status and plan eligibility must stay consistent across screens.
