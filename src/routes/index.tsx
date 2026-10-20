@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck } from "lucide-react";
+import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck, SlidersHorizontal } from "lucide-react";
 import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
@@ -72,6 +72,8 @@ function Prototype() {
   // Active/expired copy uses the Trip Pass only when it is shown and was the plan bought.
   const statusPlan: PlanId = purchased === "trip_pass" && !settings.showTripPass ? "yearly" : purchased === "monthly" && !settings.showMonthly ? "yearly" : purchased;
   return <main className="min-h-screen bg-ctl-bg md:flex md:items-start md:justify-center md:gap-8 md:p-8">
+    {/* Mobile: the phone fills the viewport, so the controls panel sits below the fold — floating button scrolls to it. */}
+    <button type="button" onClick={() => document.getElementById("controls")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="fixed bottom-4 right-4 z-40 flex min-h-11 items-center gap-1.5 rounded-full bg-ctl-ink px-4 text-sm font-medium text-ctl-panel shadow-card md:hidden">Controls<SlidersHorizontal className="h-4 w-4" /></button>
     <div data-testid="phone" className="relative mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-parchment md:h-[844px] md:w-[390px] md:shrink-0 md:rounded-[44px] md:border-[10px] md:border-pgn-dark md:shadow-card">
       <div className="flex h-9 shrink-0 items-center justify-between bg-pgn-blue px-6 text-sm font-bold text-on-dark" aria-hidden="true"><span>9:41</span><span className="flex items-center gap-1.5"><Signal className="h-4 w-4" /><Wifi className="h-4 w-4" /><BatteryFull className="h-5 w-5" /></span></div>
       <div key={screen} className="min-h-0 flex-1 overflow-y-auto">
@@ -174,7 +176,7 @@ const PLAN_LABEL: Record<PlanId, string> = { trip_pass: "Trip Pass", yearly: "Ye
 function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; settings: OfferSettings; changeSetting: <K extends keyof OfferSettings>(k: K, v: OfferSettings[K]) => void; highlight: PlanId; plans: PlanId[]; setHighlight: (p: PlanId) => void; userState: UserState; applyUser: (u: UserState) => void; resetNotify: () => void; resetRental: () => void; onStyle: () => void }) {
   const [open, setOpen] = useState(true);
   const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["trial", "Yearly free trial (demo only)"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"]] as const;
-  return <aside className="m-4 rounded-lg bg-ctl-panel p-5 text-ctl-ink shadow-card md:m-0 md:max-h-[844px] md:w-80 md:overflow-y-auto"><Action onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 w-full justify-between px-0 text-ctl-ink"><h2 className="text-lg">Prototype controls</h2><ChevronDown className={open ? "rotate-180" : ""} /></Action>{open && <>
+  return <aside id="controls" className="m-4 scroll-mt-4 rounded-lg bg-ctl-panel p-5 text-ctl-ink shadow-card md:m-0 md:max-h-[844px] md:w-80 md:overflow-y-auto"><Action onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 w-full justify-between px-0 text-ctl-ink"><h2 className="text-lg">Prototype controls</h2><ChevronDown className={open ? "rotate-180" : ""} /></Action>{open && <>
     <Seg label="Trigger context" value={p.trigger} onChange={p.applyTrigger} options={[["sidebar", "Sidebar"], ["trip3", "Trip #3"], ["pdf", "PDF export"], ["alerts", FEATURE_NAMES.live_alerts.name], ["sky", FEATURE_NAMES.sky_alerts.name], ["nudge", "Post-save nudge"], ["map", "Map filter"], ["rental", "Rental inquiry"]]} />
     {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={key === "trial" ? p.settings.trial && p.settings.eligible : p.settings[key]} disabled={(key === "eligible" && p.userState === "expired") || (key === "trial" && !p.settings.eligible)} onChange={on => p.changeSetting(key, on)} /></div>)}
     {p.plans.length > 1 && <Seg label="Highlighted plan" value={p.highlight} onChange={p.setHighlight} options={p.plans.map(id => [id, PLAN_LABEL[id]] as [PlanId, string])} />}
