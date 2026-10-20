@@ -14,3 +14,4 @@
 - Map filters are React state cleared on loss of Premium access; free search and pin details never pass through a purchase gate.
 
 - Derive paywall and active checklist groups from one feature catalogue and configured ordering; status and plan eligibility must stay consistent across screens.
+- Snapshot the confirmed offer, entry context and purchase date for the separate Success view; later panel changes must not rewrite what was purchased. Success copy, calendar billing rules and continuation mappings belong in the shared config.

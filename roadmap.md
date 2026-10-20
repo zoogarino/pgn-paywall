@@ -10,3 +10,7 @@
 # Small content update
 - [x] Update config feature names, ordering, Emergency Support statuses and disclaimer.
 - [x] Verify status controls and Premium checklists.
+
+# Post-purchase Success screen
+- [ ] Replace confirmation layout, purchase-based billing, and contextual continuation.
+- [ ] Verify planned notification state, all offers, and 390×844 layout.

@@ -227,3 +227,70 @@ export const MOCK_PINS: { name: string; category: CategoryId; x: number; y: numb
   { name: "Sesriem camp", category: "accommodation", x: 58, y: 79, trips: [1], detail: "Accommodation near Sesriem." },
   { name: "Coastal activity", category: "activities", x: 29, y: 58, trips: [], detail: "A mock activity along the coast." },
 ];
+
+export type NotificationState = { alerts: boolean; sky: boolean; emergency: boolean };
+export const EMPTY_NOTIFICATIONS: NotificationState = { alerts: false, sky: false, emergency: false };
+export const NOTIFICATION_FEATURES = [
+  { key: "alerts", feature: "live_guide", name: FEATURE_NAMES.live_alerts.name },
+  { key: "sky", feature: "sky_outlook", name: FEATURE_NAMES.sky_alerts.name },
+  { key: "emergency", feature: "emergency_support", name: FEATURE_NAMES.emergency_support.name },
+] as const;
+export type SuccessDestination = "origin" | "main" | "trip_creation" | "pdf_export" | "map_filter" | "sky" | "alerts" | "rental";
+export const SUCCESS_CONTINUATIONS: Record<Trigger, { label: string; destination: SuccessDestination }> = {
+  trip3: { label: "Create your next trip", destination: "trip_creation" },
+  pdf: { label: "Print or export your trip", destination: "pdf_export" },
+  map: { label: "Open the Location filter", destination: "map_filter" },
+  sky: { label: "Open Sky Outlook", destination: "sky" },
+  alerts: { label: "Open Live Guide", destination: "alerts" },
+  rental: { label: "Back to your inquiry", destination: "rental" },
+  sidebar: { label: "Start exploring", destination: "main" },
+  nudge: { label: "Start exploring", destination: "main" },
+};
+export const SUCCESS_COPY = {
+  close: "Close", welcome: "Welcome to Premium", welcomeBack: "Welcome back to Premium",
+  foundingThanks: "Thank you for being a founding member.", thanks: "Thank you for supporting Pocket Guide Namibia.",
+  yourPlan: "Your plan", planned: "Also planned for Premium",
+  paid: (amount: number) => `Paid ${money(amount)} today.`,
+  nextCharge: (amount: number, date: string) => `Next charge ${money(amount)} on ${date}.`,
+  trial: (date: string, amount: number) => `Your ${PLANS.yearly.trialDays}-day free trial starts today. First charge ${money(amount)} on ${date}.`,
+  passEnd: (date: string) => `Access ends on ${date}. Does not auto-rennew.`.replace("auto-rennew", "auto-renew"),
+  trialTip: (date: string) => `Cancel before ${date} to avoid being charged.`,
+  notifyLabel: (name: string) => `${COPY.notify}: ${name}`,
+} as const;
+export type SuccessPurchase = { plan: PlanId; settings: OfferSettings; trigger: Trigger; purchasedAt: string };
+export function billingDate(start: string, unit: "year" | "month" | "day", amount: number) {
+  const date = new Date(start);
+  if (unit === "day") date.setUTCDate(date.getUTCDate() + amount);
+  else {
+    const day = date.getUTCDate();
+    date.setUTCDate(1);
+    if (unit === "year") date.setUTCFullYear(date.getUTCFullYear() + amount);
+    else date.setUTCMonth(date.getUTCMonth() + amount);
+    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(day, lastDay));
+  }
+  return date.toISOString();
+}
+const successDate = (date: string) => new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+export function successDetails(p: SuccessPurchase) {
+  const { plan, settings: s, purchasedAt: today } = p;
+  const intro = plan === "yearly" && introShown(s);
+  const trial = plan === "yearly" && trialShown(s);
+  const trialEnd = billingDate(today, "day", PLANS.yearly.trialDays);
+  const next = plan === "trip_pass" ? billingDate(today, "day", PLANS.trip_pass.days) : plan === "monthly" ? billingDate(today, "month", 1) : billingDate(trial ? trialEnd : today, "year", 1);
+  const firstPrice = intro ? PLANS.yearly.firstYearPrice : PLANS.yearly.price;
+  const billing = plan === "trip_pass" ? `${SUCCESS_COPY.paid(PLANS.trip_pass.price)} ${SUCCESS_COPY.passEnd(successDate(next))}`
+    : plan === "monthly" ? `${SUCCESS_COPY.paid(PLANS.monthly.price)} ${SUCCESS_COPY.nextCharge(PLANS.monthly.price, successDate(next))}`
+    : `${trial ? SUCCESS_COPY.trial(successDate(trialEnd), firstPrice) : SUCCESS_COPY.paid(firstPrice)} ${SUCCESS_COPY.nextCharge(PLANS.yearly.price, successDate(next))}`;
+  return { headline: s.eligible ? SUCCESS_COPY.welcome : SUCCESS_COPY.welcomeBack, thanks: intro ? SUCCESS_COPY.foundingThanks : SUCCESS_COPY.thanks,
+    name: PLANS[plan].name, badge: intro ? FOUNDING_BADGE : null, billing, nextChargeAt: next,
+    tip: plan === "trip_pass" ? null : trial ? SUCCESS_COPY.trialTip(successDate(trialEnd)) : COPY.onceVisiting };
+}
+export function successContinuation(p: SuccessPurchase) {
+  if (p.trigger === "alerts" && p.settings.alerts === "coming_soon") return SUCCESS_CONTINUATIONS.sidebar;
+  return SUCCESS_CONTINUATIONS[p.trigger];
+}
+export function successPlanned(p: SuccessPurchase) {
+  if (p.plan === "trip_pass") return [];
+  return paywallFeatures(p.plan, p.settings, "sidebar").coming.filter(f => f.available);
+}
