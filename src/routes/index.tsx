@@ -5,6 +5,8 @@ import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle,
 import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
+import { PremiumSuccess } from "@/components/PremiumSuccess";
+import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
 import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 type Screen = "sidebar" | "paywall" | "success" | "active" | "expired" | "saved" | "style" | "map" | "alerts" | "rental" | "inquiry_sent";
 type SheetKind = "none" | "checkout" | "processing" | "notify" | "sky_notify" | "map_locked" | "filter" | "nudge" | "manage";
-type Notified = { alerts: boolean; sky: boolean };
+type Notified = NotificationState;
 function Prototype() {
   const [trigger, setTrigger] = useState<Trigger>("sidebar");
   const [settings, setSettings] = useState<OfferSettings>(DEFAULT_SETTINGS);
@@ -32,8 +34,10 @@ function Prototype() {
   const [selectedPref, setSelected] = useState<PlanId | null>(null);
   const selected = selectedPref && plans.includes(selectedPref) ? selectedPref : highlight;
   const [purchased, setPurchased] = useState<PlanId>("yearly");
+  const [successPurchase, setSuccessPurchase] = useState<SuccessPurchase | null>(null);
+  const [successOrigin, setSuccessOrigin] = useState<Screen>("sidebar");
   const [sheet, setSheet] = useState<SheetKind>("none");
-  const [notified, setNotified] = useState<Notified>({ alerts: false, sky: false });
+  const [notified, setNotified] = useState<Notified>(EMPTY_NOTIFICATIONS);
   const [alertsOn, setAlertsOn] = useState(false);
   const [skyOn, setSkyOn] = useState(false);
   const [filter, setFilter] = useState<MapFilter>(null);
@@ -66,7 +70,28 @@ function Prototype() {
     else openPaywall(t, "sidebar");
   };
   const applyUser = (u: UserState) => { setUserState(u); setSettings(st => ({ ...st, eligible: u !== "expired" })); dismiss(); if (u !== "active") { setFilter(null); setAlertsOn(false); setSkyOn(false); } setScreen(u === "active" ? "active" : u === "expired" ? "expired" : "sidebar"); };
-  const confirm = () => { setSheet("processing"); paymentTimer.current = setTimeout(() => { setSheet("none"); setPurchased(selected); setUserState("active"); setScreen("success"); }, 1400); };
+  const confirm = () => {
+    const purchase: SuccessPurchase = { plan: selected, settings: { ...settings }, trigger, purchasedAt: new Date().toISOString() };
+    const origin = returnScreen;
+    setSheet("processing"); paymentTimer.current = setTimeout(() => {
+      setSheet("none"); setPurchased(purchase.plan); setSuccessPurchase(purchase); setSuccessOrigin(origin); setUserState("active"); setScreen("success");
+    }, 1400);
+  };
+  const continueSuccess = () => {
+    if (!successPurchase) return;
+    dismiss();
+    const { destination } = successContinuation(successPurchase);
+    if (destination === "map_filter") { setScreen("map"); setSheet("filter"); }
+    else if (destination === "sky" || destination === "alerts") {
+      setScreen("alerts");
+      if (destination === "sky" && settings.sky !== "coming_soon") setSkyOn(true);
+      if (destination === "alerts" && settings.alerts !== "coming_soon") setAlertsOn(true);
+    }
+    else if (destination === "rental") setScreen("rental");
+    else if (destination === "main") setScreen("sidebar");
+    // Trip creation and PDF export screens do not exist in this prototype: return to the origin.
+    else setScreen(successOrigin);
+  };
   const back = () => { dismiss(); setScreen("sidebar"); };
   const changeSetting = <K extends keyof OfferSettings>(key: K, value: OfferSettings[K]) => setSettings(s => ({ ...s, [key]: value }));
   // Active/expired copy uses the Trip Pass only when it is shown and was the plan bought.
@@ -79,7 +104,8 @@ function Prototype() {
       <div key={screen} className="min-h-0 flex-1 overflow-y-auto">
         {screen === "sidebar" && <Sidebar userState={userState} onPremium={() => userState === "free" ? openPaywall("sidebar") : setScreen(userState === "active" ? "active" : "expired")} onMap={() => setScreen("map")} onAlerts={() => setScreen("alerts")} onRental={() => setScreen("rental")} />}
         {screen === "paywall" && <Paywall trigger={trigger} settings={settings} selected={selected} highlight={highlight} plans={plans} onSelect={setSelected} onClose={() => setScreen(returnScreen)} />}
-        {(screen === "active" || screen === "expired" || screen === "success") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onMap={() => setScreen("map")} />}
+        {screen === "success" && successPurchase && <PremiumSuccess purchase={successPurchase} notified={notified} onNotify={(key, on) => setNotified(n => ({ ...n, [key]: on }))} onClose={() => { dismiss(); setScreen(successOrigin); }} onContinue={continueSuccess} onManage={() => setSheet("manage")} />}
+        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onMap={() => setScreen("map")} />}
         {screen === "saved" && <div><img src={hero.url} alt="Namib dunes" className="h-64 w-full object-cover" /><div className="p-5"><Back title="Trip saved" onBack={back} /><h2 className="mt-5 text-2xl">Swakopmund → Sossusvlei</h2><p className="text-pgn-muted">3 days · 4 stops · Custom trip</p></div></div>}
         {screen === "style" && <StylePreview onBack={back} />}
         {screen === "map" && <MapScreen onBack={back} filter={filter} clear={() => setFilter(null)} premium={userState === "active"} onFilter={() => setSheet(userState === "active" ? "filter" : "map_locked")} />}
@@ -100,7 +126,7 @@ function Prototype() {
       {sheet === "filter" && userState === "active" && <FilterSheet filter={filter} apply={setFilter} onDismiss={dismiss} />}
       {(sheet === "checkout" || sheet === "processing") && <Sheet neutral label="Checkout" onDismiss={dismiss}>{sheet === "processing" ? <div role="status" className="flex flex-col items-center py-10"><Loader2 className="h-10 w-10 animate-spin motion-reduce:animate-none" /><p className="mt-3">Processing…</p></div> : <><p className="text-xs text-ctl-sub">App Store / Google Play checkout, simulated</p><div className="mt-4 flex items-center gap-3"><img src={logo.url} alt="" className="h-12 w-12" /><h2 className="text-xl">{PLANS[selected].name}</h2></div><p className="mt-3 font-bold">{priceLabel(selected, settings)}</p><p className="mt-3 text-xs text-ctl-sub">{disclosure(selected, settings)}</p><Primary className="mt-5" onClick={confirm}>Confirm</Primary><Action className="mt-2 min-h-11 w-full" onClick={dismiss}>Cancel</Action></>}</Sheet>}
     </div>
-    <Controls trigger={trigger} applyTrigger={applyTrigger} settings={settings} changeSetting={changeSetting} highlight={highlight} plans={plans} setHighlight={p => { setHighlightPref(p); setSelected(p); }} userState={userState} applyUser={applyUser} resetNotify={() => setNotified({ alerts: false, sky: false })} resetRental={() => setRentalShown(false)} onStyle={() => { dismiss(); setScreen("style"); }} />
+    <Controls trigger={trigger} applyTrigger={applyTrigger} settings={settings} changeSetting={changeSetting} highlight={highlight} plans={plans} setHighlight={p => { setHighlightPref(p); setSelected(p); }} userState={userState} applyUser={applyUser} resetNotify={() => setNotified(EMPTY_NOTIFICATIONS)} resetRental={() => setRentalShown(false)} onStyle={() => { dismiss(); setScreen("style"); }} />
   </main>;
 }
 function NotifySheet({ title, body, done, onNotify, onDismiss, onPlans }: { title: string; body: string; done: boolean; onNotify: () => void; onDismiss: () => void; onPlans?: (() => void) | undefined }) {
@@ -152,17 +178,16 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
     {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
     {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
 }
-function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onMap }: { kind: "active" | "expired" | "success"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onMap: () => void }) {
+function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onMap }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onMap: () => void }) {
   const expired = kind === "expired";
-  const title = kind === "success" ? "Welcome to Premium" : expired ? "Premium expired" : "Premium active";
+  const title = expired ? "Premium expired" : "Premium active";
   const renewDate = fmtDate(settings.trial ? PLANS.yearly.trialDays : 365);
   const date = expired ? `${PLANS[plan].name} ended on ${fmtDate(-3)}` : plan === "trip_pass" ? `Access ends on ${fmtDate(PLANS.trip_pass.days)}` : plan === "monthly" ? `Renews on ${fmtDate(30)} at ${money(PLANS.monthly.price)}/month` : renewalLine(settings, renewDate);
   const manage = <Action className="min-h-9 px-1 text-sm text-link underline" onClick={onManage}>{COPY.manageRenewal}</Action>;
   return <div className="p-5"><Back title={title} onBack={onBack} />
     {kind === "active" && reminder && plan === "yearly" && <div className="relative mt-5 rounded-lg border border-warm-border bg-on-dark p-3 pr-10 text-sm shadow-card"><Action aria-label="Dismiss reminder" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={hideReminder}><X /></Action>{reminderLine(fmtDate(365))} {manage}</div>}
-    <div className="mt-8 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{expired ? plan === "trip_pass" ? COPY.expiredPass : COPY.expiredPremium : kind === "success" ? title : "You're a Premium user"}</h2><p className="mt-2 font-display text-lg text-warm-brown">{PLANS[plan].name}</p><p className="mt-3 w-full rounded-lg border border-warm-border bg-sand p-3 text-sm">{date}{!expired && plan !== "trip_pass" && <><br />{manage}</>}</p></div>
-    {kind === "success" && plan === "yearly" && <div className="mt-4 rounded-lg bg-sand p-3 text-sm">{COPY.onceVisiting} {manage}</div>}
-    {!expired && kind === "active" && <><div className="mt-5"><Checklist plan={plan} settings={settings} /></div>{notified.alerts && <p className="mt-4 text-sm text-pgn-muted">{COPY.notifyRow(FEATURE_NAMES.live_alerts.name)}</p>}{notified.sky && <p className="mt-1 text-sm text-pgn-muted">{COPY.notifyRow(FEATURE_NAMES.sky_alerts.name)}</p>}</>}
+    <div className="mt-8 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{expired ? plan === "trip_pass" ? COPY.expiredPass : COPY.expiredPremium : "You're a Premium user"}</h2><p className="mt-2 font-display text-lg text-warm-brown">{PLANS[plan].name}</p><p className="mt-3 w-full rounded-lg border border-warm-border bg-sand p-3 text-sm">{date}{!expired && plan !== "trip_pass" && <><br />{manage}</>}</p></div>
+    {!expired && kind === "active" && <><div className="mt-5"><Checklist plan={plan} settings={settings} /></div>{NOTIFICATION_FEATURES.filter(f => notified[f.key]).map(f => <p key={f.key} className="mt-2 text-sm text-pgn-muted">{COPY.notifyRow(f.name)}</p>)}</>}
     <Primary className="mt-7" onClick={expired ? onPlans : onMap}>{expired ? plan === "trip_pass" ? COPY.anotherPass : COPY.renew : "Explore Premium features"}</Primary><div className="text-center"><Restore /></div></div>;
 }
 function RentalForm({ premium, onBack, onSubmit }: { premium: boolean; onBack: () => void; onSubmit: () => void }) {

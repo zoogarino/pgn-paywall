@@ -232,3 +232,13 @@
   border: 2px solid transparent;
   background: linear-gradient(var(--pgn-on-dark), var(--pgn-on-dark)) padding-box, var(--gradient-gold) border-box;
 }
+
+@keyframes success-celebration {
+  0% { transform: scale(0.92); box-shadow: 0 0 0 0 var(--pgn-sand); }
+  55% { transform: scale(1.04); box-shadow: 0 0 22px 8px var(--pgn-sand); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 var(--pgn-sand); }
+}
+.success-celebration { animation: success-celebration 1s ease-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  .success-celebration { animation: none; }
+}

@@ -253,7 +253,7 @@ export const SUCCESS_COPY = {
   paid: (amount: number) => `Paid ${money(amount)} today.`,
   nextCharge: (amount: number, date: string) => `Next charge ${money(amount)} on ${date}.`,
   trial: (date: string, amount: number) => `Your ${PLANS.yearly.trialDays}-day free trial starts today. First charge ${money(amount)} on ${date}.`,
-  passEnd: (date: string) => `Access ends on ${date}. Does not auto-rennew.`.replace("auto-rennew", "auto-renew"),
+  passEnd: (date: string) => `Access ends on ${date}. Does not auto-renew.`,
   trialTip: (date: string) => `Cancel before ${date} to avoid being charged.`,
   notifyLabel: (name: string) => `${COPY.notify}: ${name}`,
 } as const;
