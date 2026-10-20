@@ -33,7 +33,7 @@ export const PREMIUM_CAP_TRIPS = 20;
 export const FEATURE_NAMES = {
   pin_filter: { name: "Location filter", desc: "Filter the map to what matters", short: "Filter the map to what matters" }, // placeholder name
   sky_alerts: { name: "Sky Outlook", desc: "Alerts for meteor showers and other sky events, plus multi-day weather forecasts", short: "Sky events and multi-day forecasts" }, // placeholder name
-  live_alerts: { name: "Live location alerts", desc: "Alerts when you're near park gates and safety zones", short: "Near park gates and safety zones" },
+  live_alerts: { name: "Live Guide", desc: "Recommendations and information based on your location, as you travel.", short: "Recommendations and information based on your location, as you travel." }, // placeholder name
 } as const;
 // eligible: production reads intro-offer eligibility from the store / RevenueCat, never from user state.
 // trial: demo only. The trial cannot be combined with the intro price as an App Store introductory offer; to be decided with the developers.
@@ -50,11 +50,15 @@ export const COPY = {
   conservation: "A portion of every subscription supports conservation and community partners in Namibia.",
   // Placeholder wording: pending legal review.
   // Placeholder wording: pending legal review (and a check of the weather data provider's terms).
-  alertsDisclaimer: "Alerts and forecasts depend on your device's GPS, connection and settings and on third-party data, and may be delayed, change, or be unavailable in some conditions.",
+  // In production this feature needs an opt-in location permission prompt; no UI needed here.
+  alertsDisclaimer: "Location-based recommendations and forecasts depend on your device's location settings, connection and third-party data, and may be delayed, change, or be unavailable in some conditions.",
   foundingLine: "Founding member price for early Premium members.",
-  includedToday: "Included today", comingSoon: "Coming soon",
-  alertsBody: "Get alerts when you're near park gates and safety zones. We'll let you know the moment they launch.",
-  skySheetTitle: `${FEATURE_NAMES.sky_alerts.name} is coming soon`,
+  includedToday: "Included today", comingSoon: "Planned",
+  alertsBody: "Get recommendations and information based on your location, as you travel. We'll let you know when it's ready.",
+  liveGuideStatus: `${FEATURE_NAMES.live_alerts.name} status`,
+  skyStatus: `${FEATURE_NAMES.sky_alerts.name} status`,
+  alertsPlannedLine: `Planned for ${LIVE_ALERTS_RELEASE_LABEL}`,
+  skySheetTitle: `${FEATURE_NAMES.sky_alerts.name} is planned`,
   skyBody: "Get alerts for meteor showers and other sky events, plus multi-day weather forecasts. We'll let you know when it's ready.",
   notify: "Notify me", notified: "You're on the list",
   notifyRow: (feature: string) => `${feature}: you'll be notified when it launches`,
@@ -75,11 +79,11 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
   rental: { headline: "Planning to self-drive?", sub: `Premium members get ${RENTAL_DISCOUNT_PERCENT}% off car rentals booked through Pocket Guide.` },
   trip3: { headline: `You've reached your ${FREE_CAP_TRIPS} free trips.`, sub: `Premium lets you plan up to ${PREMIUM_CAP_TRIPS}.` },
   pdf: { headline: "Take your itinerary offline, on paper.", sub: "Export and print any trip with Premium." },
-  alerts: { headline: "Stay informed as you drive.", sub: "Get alerts when you're near park gates and safety zones." },
+  alerts: { headline: "Stay informed as you drive.", sub: FEATURE_NAMES.live_alerts.desc },
   sky: { headline: "Know what's overhead and ahead.", sub: "Get alerts for meteor showers and other sky events, plus multi-day weather forecasts." },
   map: { headline: "Filter the map to what matters.", sub: "Premium members see only what's relevant to their trip." },
 };
-export const alertsSheetTitle = () => `Live alerts are coming ${LIVE_ALERTS_RELEASE_LABEL}`;
+export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
 export type FeatureItem = { name: string; desc?: string; tag?: string };
 export function featureGroups(id: PlanId, s: OfferSettings) {
   const included: FeatureItem[] = [{ name: `Up to ${PREMIUM_CAP_TRIPS} custom trips` }, { name: "PDF export & print" }, { ...FEATURE_NAMES.pin_filter }];
@@ -88,7 +92,7 @@ export function featureGroups(id: PlanId, s: OfferSettings) {
   if (s.rental && RENTAL_DISCOUNT_PLANS.includes(id)) included.push({ name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals` });
   if (s.alerts === "released") included.splice(3, 0, { ...FEATURE_NAMES.live_alerts });
   else if (!(id === "trip_pass" && s.alerts === "coming_soon")) coming.push({ ...FEATURE_NAMES.live_alerts, tag: s.alerts === "coming_soon" ? LIVE_ALERTS_RELEASE_LABEL : "Early access" });
-  if (s.sky === "coming_soon") coming.push({ ...FEATURE_NAMES.sky_alerts, tag: "Coming soon" });
+  if (s.sky === "coming_soon") coming.push({ ...FEATURE_NAMES.sky_alerts });
   return { included, coming };
 }
 export function planExtras(id: PlanId, s: OfferSettings) {
@@ -180,12 +184,11 @@ export function nudgeCopy(s: OfferSettings) {
   const prefix = `Trip saved. You've used 1 of ${FREE_CAP_TRIPS} free trips. Premium includes up to ${PREMIUM_CAP_TRIPS} trips, PDF export, the ${FEATURE_NAMES.pin_filter.name}`;
   const inc: string[] = []; const coming: string[] = [];
   (s.sky === "released" ? inc : coming).push(FEATURE_NAMES.sky_alerts.name);
-  if (s.alerts === "coming_soon") coming.push(`live location alerts`); else inc.push("live location alerts");
+  if (s.alerts === "coming_soon") coming.push(FEATURE_NAMES.live_alerts.name); else inc.push(FEATURE_NAMES.live_alerts.name);
   const list = inc.length ? `${inc.length > 1 ? ", " + inc.slice(0, -1).join(", ") : ""} and ${inc[inc.length - 1]}` : "";
   const included = inc.length ? `${prefix}${list}.` : `${prefix.replace(/, the /, " and the ")}.`;
   if (!coming.length) return included;
-  const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
-  const comingText = coming.map(c => c === "live location alerts" ? `Live location alerts are coming ${LIVE_ALERTS_RELEASE_LABEL}` : `${cap(c)} is coming soon`).join(". ");
+  const comingText = coming.map(c => c === FEATURE_NAMES.live_alerts.name ? `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}` : `${c} is planned`).join(". ");
   return `${included} ${comingText}.`;
 }
 export const fmtDate = (daysOut: number) => new Date(Date.now() + daysOut * 864e5).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });

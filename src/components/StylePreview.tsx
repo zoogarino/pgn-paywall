@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, Car, Map as MapIcon, Heart } from "lucide-react";
+import { FEATURE_NAMES } from "@/lib/paywall-config";
 
 const TOKENS = [
   "pgn-blue", "pgn-link", "pgn-navy", "pgn-terracotta", "pgn-terracotta-text", "pgn-sand", "pgn-parchment",
@@ -70,7 +71,7 @@ export function StylePreview({ onBack }: { onBack: () => void }) {
 
       <Label>Toggles</Label>
       <div className="space-y-1 rounded-2xl border border-warm-border bg-on-dark px-4">
-        {([["Offline maps", off, setOff], ["Live location alerts", on, setOn]] as const).map(([l, v, set]) => (
+        {([["Offline maps", off, setOff], [FEATURE_NAMES.live_alerts.name, on, setOn]] as const).map(([l, v, set]) => (
           <div key={l} className="flex min-h-12 items-center justify-between text-navy">
             <span>{l}</span>
             <button role="switch" aria-checked={v} aria-label={l} onClick={() => set(!v)}

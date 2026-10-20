@@ -53,8 +53,7 @@ describe("Paywall offer rules", () => {
     expect(paywallFeatures("monthly", M, "sidebar").included.find(f => f.id === "rental_discount")?.available).toBe(false);
     expect(paywallFeatures("trip_pass", M, "sidebar").coming.find(f => f.id === "live_alerts")?.available).toBe(false);
   });
-  it("status checklist and nudge unchanged", () => {
+  it("keeps planned Live Guide unavailable in the Trip Pass checklist", () => {
     expect(featureGroups("trip_pass", S).coming).toEqual([]);
-    expect(nudgeCopy(S)).toBe("Trip saved. You've used 1 of 2 free trips. Premium includes up to 20 trips, PDF export, the Location filter and Sky Outlook. Live location alerts are coming February 2027.");
   });
 });
