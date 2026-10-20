@@ -72,6 +72,8 @@ function Prototype() {
   // Active/expired copy uses the Trip Pass only when it is shown and was the plan bought.
   const statusPlan: PlanId = purchased === "trip_pass" && !settings.showTripPass ? "yearly" : purchased === "monthly" && !settings.showMonthly ? "yearly" : purchased;
   return <main className="min-h-screen bg-ctl-bg md:flex md:items-start md:justify-center md:gap-8 md:p-8">
+    {/* Mobile: the phone fills the viewport, so the controls panel sits below the fold — floating button scrolls to it. */}
+    <button type="button" onClick={() => document.getElementById("controls")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="fixed bottom-4 right-4 z-40 flex min-h-11 items-center gap-1.5 rounded-full bg-ctl-ink px-4 text-sm font-medium text-ctl-panel shadow-card md:hidden">Controls<SlidersHorizontal className="h-4 w-4" /></button>
     <div data-testid="phone" className="relative mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-parchment md:h-[844px] md:w-[390px] md:shrink-0 md:rounded-[44px] md:border-[10px] md:border-pgn-dark md:shadow-card">
       <div className="flex h-9 shrink-0 items-center justify-between bg-pgn-blue px-6 text-sm font-bold text-on-dark" aria-hidden="true"><span>9:41</span><span className="flex items-center gap-1.5"><Signal className="h-4 w-4" /><Wifi className="h-4 w-4" /><BatteryFull className="h-5 w-5" /></span></div>
       <div key={screen} className="min-h-0 flex-1 overflow-y-auto">
