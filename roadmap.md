@@ -6,3 +6,7 @@
 - [x] Verify flows, status transitions, and desktop/mobile layout.# Phase 1 annual-only
 - [x] Annual-only $9.99 then $44.99 founding offer; Trip Pass/Monthly behind switches.
 - [x] Grouped features, Sky Outlook, gold-only accent, rental pop-up, renewal safeguards, new controls.
+
+# Small content update
+- [ ] Update config feature names, ordering, Emergency Support statuses and disclaimer.
+- [ ] Verify status controls and Premium checklists.

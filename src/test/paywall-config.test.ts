@@ -40,20 +40,39 @@ describe("Paywall offer rules", () => {
   });
   it("feature order, trigger highlight and status groups", () => {
     const g = paywallFeatures("yearly", S, "sidebar");
-    expect(g.included.map(f => f.id)).toEqual(["rental_discount", "custom_trips", "pdf_export", "location_filter", "sky_outlook"]);
-    expect(g.coming).toEqual([expect.objectContaining({ id: "live_alerts", tag: "February 2027" })]);
+    expect(g.included.map(f => f.id)).toEqual(["location_filter", "rental_discount", "custom_trips", "pdf_export", "sky_outlook"]);
+    expect(g.coming).toEqual([expect.objectContaining({ id: "live_guide", tag: "February 2027" }), expect.objectContaining({ id: "emergency_support" })]);
     expect(paywallFeatures("yearly", S, "pdf").included[0]).toMatchObject({ id: "pdf_export", highlight: true });
     const e = paywallFeatures("yearly", { ...S, alerts: "early_access" }, "sidebar");
-    expect(e.early.map(f => f.id)).toEqual(["live_alerts"]); expect(e.coming).toEqual([]);
+    expect(e.early.map(f => f.id)).toEqual(["live_guide"]); expect(e.coming.map(f => f.id)).toEqual(["emergency_support"]);
     const sky = paywallFeatures("yearly", { ...S, sky: "coming_soon" }, "sidebar");
     expect(sky.coming.find(f => f.id === "sky_outlook")?.tag).toBeUndefined();
   });
   it("marks features the selected plan lacks", () => {
     const M = { ...S, showMonthly: true, showTripPass: true };
     expect(paywallFeatures("monthly", M, "sidebar").included.find(f => f.id === "rental_discount")?.available).toBe(false);
-    expect(paywallFeatures("trip_pass", M, "sidebar").coming.find(f => f.id === "live_alerts")?.available).toBe(false);
+    expect(paywallFeatures("trip_pass", M, "sidebar").coming.find(f => f.id === "live_guide")?.available).toBe(false);
   });
   it("keeps planned Live Guide unavailable in the Trip Pass checklist", () => {
     expect(featureGroups("trip_pass", S).coming).toEqual([]);
+  });
+  it("defaults Emergency Support to planned without a release date", () => {
+    expect(S.emergency).toBe("coming_soon");
+    expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")).toMatchObject({ available: true });
+    expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")?.tag).toBeUndefined();
+  });
+  it("excludes unreleased Emergency Support from Trip Pass", () => {
+    for (const emergency of ["coming_soon", "early_access"] as const) {
+      const groups = paywallFeatures("trip_pass", { ...S, showTripPass: true, emergency }, "sidebar");
+      expect([...groups.coming, ...groups.early].find(f => f.id === "emergency_support")?.available).toBe(false);
+    }
+  });
+  it("includes released Emergency Support in Trip Pass and the active checklist", () => {
+    const settings = { ...S, emergency: "released" as const };
+    expect(paywallFeatures("trip_pass", settings, "sidebar").included.find(f => f.id === "emergency_support")?.available).toBe(true);
+    expect(featureGroups("trip_pass", settings).included.some(f => f.name === "Emergency Support")).toBe(true);
+  });
+  it("places early-access Emergency Support in the active early group", () => {
+    expect(featureGroups("yearly", { ...S, emergency: "early_access" }).early.some(f => f.name === "Emergency Support")).toBe(true);
   });
 });

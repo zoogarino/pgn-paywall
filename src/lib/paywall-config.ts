@@ -26,19 +26,23 @@ export const LIVE_ALERTS_STATUS: AlertsStatus = "coming_soon";
 export const LIVE_ALERTS_RELEASE_LABEL = "February 2027";
 export const SKY_ALERTS_RELEASE_LABEL: string | null = null;
 export const SKY_ALERTS_STATUS: SkyStatus = "released";
+export const EMERGENCY_SUPPORT_STATUS: AlertsStatus = "coming_soon";
+export const EMERGENCY_SUPPORT_RELEASE_LABEL: string | null = null;
 export const PRE_RENEWAL_REMINDER_ON = false;
 export const RENEWAL_REMINDER_DAYS = 14;
 export const FREE_CAP_TRIPS = 2;
 export const PREMIUM_CAP_TRIPS = 20;
 export const FEATURE_NAMES = {
-  pin_filter: { name: "Location filter", desc: "Filter the map to what matters", short: "Filter the map to what matters" }, // placeholder name
+  pdf_export: { name: "Print, export and share your trip.", short: "printing and export" },
+  emergency_support: { name: "Emergency Support", desc: "Quick access to support contacts", short: "Quick access to support contacts" },
+  pin_filter: { name: "Location filter", desc: "Customize map to your interests", short: "Customize map to your interests" }, // placeholder name
   sky_alerts: { name: "Sky Outlook", desc: "Alerts for meteor showers and other sky events, plus multi-day weather forecasts", short: "Sky events and multi-day forecasts" }, // placeholder name
   live_alerts: { name: "Live Guide", desc: "Recommendations and information based on your location, as you travel.", short: "Recommendations and information based on your location, as you travel." }, // placeholder name
 } as const;
 // eligible: production reads intro-offer eligibility from the store / RevenueCat, never from user state.
 // trial: demo only. The trial cannot be combined with the intro price as an App Store introductory offer; to be decided with the developers.
-export type OfferSettings = { eligible: boolean; launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null };
-export const DEFAULT_SETTINGS: OfferSettings = { eligible: true, launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE };
+export type OfferSettings = { eligible: boolean; launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; emergency: AlertsStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null };
+export const DEFAULT_SETTINGS: OfferSettings = { eligible: true, launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, emergency: EMERGENCY_SUPPORT_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE };
 export const launchEnabled = (s: OfferSettings) => s.launch;
 export const visiblePlans = (s: OfferSettings) => PLAN_ORDER.filter(p => p === "yearly" || (p === "trip_pass" ? s.showTripPass : s.showMonthly));
 export const resolveHighlight = (wanted: PlanId | null, s: OfferSettings): PlanId => { const v = visiblePlans(s); return wanted && v.includes(wanted) ? wanted : v[0] ?? "yearly"; };
@@ -53,7 +57,10 @@ export const COPY = {
   // In production this feature needs an opt-in location permission prompt; no UI needed here.
   alertsDisclaimer: "Location-based recommendations and forecasts depend on your device's location settings, connection and third-party data, and may be delayed, change, or be unavailable in some conditions.",
   foundingLine: "Founding member price for early Premium members.",
-  includedToday: "Included today", comingSoon: "Planned",
+  includedToday: "Included today", comingSoon: "Planned", earlyAccess: "Early access", released: "Released",
+  emergencyStatus: `${FEATURE_NAMES.emergency_support.name} status`,
+  // Placeholder wording, pending legal review.
+  emergencyDisclaimer: "Emergency Support does not replace local emergency services.",
   alertsBody: "Get recommendations and information based on your location, as you travel. We'll let you know when it's ready.",
   liveGuideStatus: `${FEATURE_NAMES.live_alerts.name} status`,
   skyStatus: `${FEATURE_NAMES.sky_alerts.name} status`,
@@ -86,14 +93,9 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
 export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
 export type FeatureItem = { name: string; desc?: string; tag?: string };
 export function featureGroups(id: PlanId, s: OfferSettings) {
-  const included: FeatureItem[] = [{ name: `Up to ${PREMIUM_CAP_TRIPS} custom trips` }, { name: "PDF export & print" }, { ...FEATURE_NAMES.pin_filter }];
-  const coming: FeatureItem[] = [];
-  if (s.sky === "released") included.push({ ...FEATURE_NAMES.sky_alerts });
-  if (s.rental && RENTAL_DISCOUNT_PLANS.includes(id)) included.push({ name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals` });
-  if (s.alerts === "released") included.splice(3, 0, { ...FEATURE_NAMES.live_alerts });
-  else if (!(id === "trip_pass" && s.alerts === "coming_soon")) coming.push({ ...FEATURE_NAMES.live_alerts, tag: s.alerts === "coming_soon" ? LIVE_ALERTS_RELEASE_LABEL : "Early access" });
-  if (s.sky === "coming_soon") coming.push({ ...FEATURE_NAMES.sky_alerts });
-  return { included, coming };
+  const groups = paywallFeatures(id, s, "sidebar");
+  const available = (items: PaywallFeature[]): FeatureItem[] => items.filter(f => f.available);
+  return { included: available(groups.included), early: available(groups.early), coming: available(groups.coming) };
 }
 export function planExtras(id: PlanId, s: OfferSettings) {
   if (id === "trip_pass") return [`Valid ${PLANS.trip_pass.days} days from purchase · one-time payment · no auto-renewal`];
@@ -144,22 +146,25 @@ export function paywallCopy(t: Trigger, s: OfferSettings) {
   return TRIGGER_COPY[t];
 }
 // The order is a hypothesis; change it here only.
-export const FEATURE_ORDER = ["rental_discount", "custom_trips", "pdf_export", "location_filter", "sky_outlook"] as const;
-export type FeatureId = typeof FEATURE_ORDER[number] | "live_alerts";
-export const TRIGGER_FEATURE: Partial<Record<Trigger, FeatureId>> = { trip3: "custom_trips", pdf: "pdf_export", map: "location_filter", rental: "rental_discount", sky: "sky_outlook", alerts: "live_alerts" };
+export const FEATURE_ORDER = ["location_filter", "rental_discount", "custom_trips", "pdf_export", "sky_outlook"] as const;
+export const PLANNED_ORDER = ["live_guide", "emergency_support"] as const;
+export type FeatureId = typeof FEATURE_ORDER[number] | typeof PLANNED_ORDER[number];
+export const TRIGGER_FEATURE: Partial<Record<Trigger, FeatureId>> = { trip3: "custom_trips", pdf: "pdf_export", map: "location_filter", rental: "rental_discount", sky: "sky_outlook", alerts: "live_guide" };
 export type PaywallFeature = { id: FeatureId; name: string; desc?: string | undefined; tag?: string; plans: PlanId[]; available: boolean; highlight: boolean };
 function catalogue(s: OfferSettings) {
   const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
-  const notTrip = (st: string) => st === "coming_soon" ? all.filter(p => p !== "trip_pass") : all;
+  const notTrip = (st: string) => st !== "released" ? all.filter(p => p !== "trip_pass") : all;
   const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
     { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide.", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
     { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
-    { id: "pdf_export", name: "PDF export & print", plans: all, status: "released", date: null, enabled: true },
+    { id: "pdf_export", name: FEATURE_NAMES.pdf_export.name, plans: all, status: "released", date: null, enabled: true },
     { id: "location_filter", name: FEATURE_NAMES.pin_filter.name, desc: FEATURE_NAMES.pin_filter.short, plans: all, status: "released", date: null, enabled: true },
     { id: "sky_outlook", name: FEATURE_NAMES.sky_alerts.name, desc: FEATURE_NAMES.sky_alerts.short, plans: notTrip(s.sky), status: s.sky, date: SKY_ALERTS_RELEASE_LABEL, enabled: true },
-    { id: "live_alerts", name: FEATURE_NAMES.live_alerts.name, desc: FEATURE_NAMES.live_alerts.short, plans: notTrip(s.alerts), status: s.alerts, date: LIVE_ALERTS_RELEASE_LABEL, enabled: true },
+    { id: "live_guide", name: FEATURE_NAMES.live_alerts.name, desc: FEATURE_NAMES.live_alerts.short, plans: notTrip(s.alerts), status: s.alerts, date: LIVE_ALERTS_RELEASE_LABEL, enabled: true },
+    { id: "emergency_support", name: FEATURE_NAMES.emergency_support.name, desc: FEATURE_NAMES.emergency_support.desc, plans: notTrip(s.emergency), status: s.emergency, date: EMERGENCY_SUPPORT_RELEASE_LABEL, enabled: true },
   ];
-  return list.filter(f => f.enabled);
+  const order: readonly FeatureId[] = [...FEATURE_ORDER, ...PLANNED_ORDER];
+  return list.filter(f => f.enabled).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 }
 // Shared list for the paywall: features offered by any visible plan; ones the selected plan lacks are marked unavailable.
 export function paywallFeatures(selected: PlanId, s: OfferSettings, trigger: Trigger) {
@@ -172,8 +177,15 @@ export function paywallFeatures(selected: PlanId, s: OfferSettings, trigger: Tri
     else if (f.status === "early_access") groups.early.push({ ...item, tag: "Early access" });
     else groups.coming.push(f.date ? { ...item, tag: f.date } : item);
   }
+  const plannedRank = (f: PaywallFeature) => { const index = (PLANNED_ORDER as readonly FeatureId[]).indexOf(f.id); return index < 0 ? PLANNED_ORDER.length : index; };
+  groups.coming.sort((a, b) => plannedRank(a) - plannedRank(b));
   for (const g of Object.values(groups)) { const i = g.findIndex(x => x.highlight); if (i > 0) g.unshift(...g.splice(i, 1)); }
   return groups;
+}
+export function featureDisclaimer(selected: PlanId, s: OfferSettings) {
+  const groups = paywallFeatures(selected, s, "sidebar");
+  const shown = Object.values(groups).some(group => group.some(f => f.id === "emergency_support"));
+  return `${COPY.alertsDisclaimer}${shown ? ` ${COPY.emergencyDisclaimer}` : ""}`;
 }
 export const priceLabel = (id: PlanId, s: OfferSettings) => priceParts(id, s).join(" · ");
 export const offerEndLine = (s: OfferSettings) => s.offerEnd?.trim() ? ` Available until ${s.offerEnd.trim()}.` : "";
@@ -181,7 +193,7 @@ export const renewalLine = (s: OfferSettings, date: string) => `Renews on ${date
 // In production: a local or push notification plus this in-app card, scheduled RENEWAL_REMINDER_DAYS before renewal.
 export const reminderLine = (date: string) => `Your Premium renews in ${RENEWAL_REMINDER_DAYS} days, on ${date}, for ${money(PLANS.yearly.price)}.`;
 export function nudgeCopy(s: OfferSettings) {
-  const prefix = `Trip saved. You've used 1 of ${FREE_CAP_TRIPS} free trips. Premium includes up to ${PREMIUM_CAP_TRIPS} trips, PDF export, the ${FEATURE_NAMES.pin_filter.name}`;
+  const prefix = `Trip saved. You've used 1 of ${FREE_CAP_TRIPS} free trips. Premium includes up to ${PREMIUM_CAP_TRIPS} trips, ${FEATURE_NAMES.pdf_export.short}, the ${FEATURE_NAMES.pin_filter.name}`;
   const inc: string[] = []; const coming: string[] = [];
   (s.sky === "released" ? inc : coming).push(FEATURE_NAMES.sky_alerts.name);
   if (s.alerts === "coming_soon") coming.push(FEATURE_NAMES.live_alerts.name); else inc.push(FEATURE_NAMES.live_alerts.name);
