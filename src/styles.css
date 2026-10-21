@@ -56,6 +56,7 @@
   --color-navy: var(--pgn-navy);
   --color-terracotta: var(--pgn-terracotta);
   --color-terracotta-text: var(--pgn-terracotta-text);
+  --color-pgn-accent: var(--pgn-accent);
   --color-sand: var(--pgn-sand);
   --color-parchment: var(--pgn-parchment);
   --color-warm-border: var(--pgn-warm-border);
@@ -106,6 +107,8 @@
   --pgn-navy: #1b3f8f;
   --pgn-terracotta: #b45f22;
   --pgn-terracotta-text: #a85a20;
+  /* Premium accent (gold) — e.g. the post-save nudge progress bar */
+  --pgn-accent: #fac60e;
   --pgn-sand: #f5ecd7;
   --pgn-parchment: #fdf6ee;
   --pgn-warm-border: #e8d9c8;

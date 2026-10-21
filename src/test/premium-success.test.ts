@@ -15,11 +15,11 @@ describe("Success purchase rules", () => {
   it("clamps leap day yearly renewals to the end of February", () => {
     expect(billingDate("2028-02-29T08:38:00.000Z", "year", 1)).toBe("2029-02-28T08:38:00.000Z");
   });
-  it("starts yearly billing after the eligible five-day trial", () => {
-    expect(successDetails({ ...purchase, settings: { ...purchase.settings, trial: true } }).nextChargeAt).toBe("2027-10-25T08:38:00.000Z");
-  });
-  it("never grants a trial to an ineligible purchase", () => {
-    expect(successDetails({ ...purchase, settings: { ...purchase.settings, trial: true, eligible: false } }).nextChargeAt).toBe("2027-10-20T08:38:00.000Z");
+  it("bills an ineligible yearly purchase at the standard price from day one", () => {
+    const details = successDetails({ ...purchase, settings: { ...purchase.settings, eligible: false } });
+    expect(details.nextChargeAt).toBe("2027-10-20T08:38:00.000Z");
+    expect(details.billing).toContain("Paid $44.99 today.");
+    expect(details.badge).toBeNull();
   });
   it("only continues into Live Guide when early access or released", () => {
     expect(successContinuation({ ...purchase, trigger: "alerts" }).destination).toBe("main");
