@@ -28,8 +28,8 @@ describe("Success purchase rules", () => {
   it("routes the map purchase to its filter sheet", () => {
     expect(successContinuation({ ...purchase, trigger: "map" }).destination).toBe("map_filter");
   });
-  it("excludes all planned notifications from the Trip Pass", () => {
-    expect(successPlanned({ ...purchase, plan: "trip_pass" })).toEqual([]);
+  it("offers planned-feature notifications to Trip Pass purchases too", () => {
+    expect(successPlanned({ ...purchase, plan: "trip_pass" }).map(f => f.id)).toEqual(["live_guide", "emergency_support"]);
   });
   it("lists only planned features and hides the group when none remain", () => {
     expect(successPlanned(purchase).map(f => f.id)).toEqual(["live_guide", "emergency_support"]);

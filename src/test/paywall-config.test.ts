@@ -48,23 +48,23 @@ describe("Paywall offer rules", () => {
     const sky = paywallFeatures("yearly", { ...S, sky: "coming_soon" }, "sidebar");
     expect(sky.coming.find(f => f.id === "sky_outlook")?.tag).toBeUndefined();
   });
-  it("marks features the selected plan lacks", () => {
+  it("marks only the rental discount as missing from Monthly", () => {
     const M = { ...S, showMonthly: true, showTripPass: true };
     expect(paywallFeatures("monthly", M, "sidebar").included.find(f => f.id === "rental_discount")?.available).toBe(false);
-    expect(paywallFeatures("trip_pass", M, "sidebar").coming.find(f => f.id === "live_guide")?.available).toBe(false);
+    expect(paywallFeatures("trip_pass", M, "sidebar").coming.find(f => f.id === "live_guide")?.available).toBe(true);
   });
-  it("keeps planned Live Guide unavailable in the Trip Pass checklist", () => {
-    expect(featureGroups("trip_pass", S).coming).toEqual([]);
+  it("includes planned features in the Trip Pass checklist", () => {
+    expect(featureGroups("trip_pass", S).coming.map(f => f.id)).toEqual(["live_guide", "emergency_support"]);
   });
   it("defaults Emergency Support to planned without a release date", () => {
     expect(S.emergency).toBe("coming_soon");
     expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")).toMatchObject({ available: true });
     expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")?.tag).toBeUndefined();
   });
-  it("excludes unreleased Emergency Support from Trip Pass", () => {
+  it("includes unreleased Emergency Support in the Trip Pass", () => {
     for (const emergency of ["coming_soon", "early_access"] as const) {
       const groups = paywallFeatures("trip_pass", { ...S, showTripPass: true, emergency }, "sidebar");
-      expect([...groups.coming, ...groups.early].find(f => f.id === "emergency_support")?.available).toBe(false);
+      expect([...groups.coming, ...groups.early].find(f => f.id === "emergency_support")?.available).toBe(true);
     }
   });
   it("includes released Emergency Support in Trip Pass and the active checklist", () => {
