@@ -155,7 +155,7 @@ function catalogue(s: OfferSettings) {
   const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
   const notTrip = (st: string) => st !== "released" ? all.filter(p => p !== "trip_pass") : all;
   const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
-    { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide.", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
+    { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide Namibia", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
     { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
     { id: "pdf_export", name: FEATURE_NAMES.pdf_export.name, plans: all, status: "released", date: null, enabled: true },
     { id: "location_filter", name: FEATURE_NAMES.pin_filter.name, desc: FEATURE_NAMES.pin_filter.short, plans: all, status: "released", date: null, enabled: true },
