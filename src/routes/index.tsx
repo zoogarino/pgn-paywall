@@ -9,7 +9,7 @@ import { PremiumSuccess } from "@/components/PremiumSuccess";
 import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
-import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
+import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Pocket Guide Premium — Namibia travel plans" },
@@ -77,10 +77,8 @@ function Prototype() {
       setSheet("none"); setPurchased(purchase.plan); setSuccessPurchase(purchase); setSuccessOrigin(origin); setUserState("active"); setScreen("success");
     }, 1400);
   };
-  const continueSuccess = () => {
-    if (!successPurchase) return;
+  const goTo = (destination: SuccessDestination) => {
     dismiss();
-    const { destination } = successContinuation(successPurchase);
     if (destination === "map_filter") { setScreen("map"); setSheet("filter"); }
     else if (destination === "sky" || destination === "alerts") {
       setScreen("alerts");
@@ -92,6 +90,7 @@ function Prototype() {
     // Trip creation and PDF export screens do not exist in this prototype: return to the origin.
     else setScreen(successOrigin);
   };
+  const continueSuccess = () => { if (successPurchase) goTo(successContinuation(successPurchase).destination); };
   const back = () => { dismiss(); setScreen("sidebar"); };
   const changeSetting = <K extends keyof OfferSettings>(key: K, value: OfferSettings[K]) => setSettings(s => ({ ...s, [key]: value }));
   // Active/expired copy uses the Trip Pass only when it is shown and was the plan bought.
@@ -105,7 +104,7 @@ function Prototype() {
         {screen === "sidebar" && <Sidebar userState={userState} onPremium={() => userState === "free" ? openPaywall("sidebar") : setScreen(userState === "active" ? "active" : "expired")} onMap={() => setScreen("map")} onAlerts={() => setScreen("alerts")} onRental={() => setScreen("rental")} />}
         {screen === "paywall" && <Paywall trigger={trigger} settings={settings} selected={selected} highlight={highlight} plans={plans} onSelect={setSelected} onClose={() => setScreen(returnScreen)} />}
         {screen === "success" && successPurchase && <PremiumSuccess purchase={successPurchase} notified={notified} onNotify={(key, on) => setNotified(n => ({ ...n, [key]: on }))} onClose={() => { dismiss(); setScreen(successOrigin); }} onContinue={continueSuccess} onManage={() => setSheet("manage")} />}
-        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onMap={() => setScreen("map")} />}
+        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onOpen={goTo} />}
         {screen === "saved" && <div><img src={hero.url} alt="Namib dunes" className="h-64 w-full object-cover" /><div className="p-5"><Back title="Trip saved" onBack={back} /><h2 className="mt-5 text-2xl">Swakopmund → Sossusvlei</h2><p className="text-pgn-muted">3 days · 4 stops · Custom trip</p></div></div>}
         {screen === "style" && <StylePreview onBack={back} />}
         {screen === "map" && <MapScreen onBack={back} filter={filter} clear={() => setFilter(null)} premium={userState === "active"} onFilter={() => setSheet(userState === "active" ? "filter" : "map_locked")} />}
@@ -178,17 +177,23 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
     {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
     {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
 }
-function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onMap }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onMap: () => void }) {
-  const expired = kind === "expired";
-  const title = expired ? "Premium expired" : "Premium active";
-  const renewDate = fmtDate(settings.trial ? PLANS.yearly.trialDays : 365);
-  const date = expired ? `${PLANS[plan].name} ended on ${fmtDate(-3)}` : plan === "trip_pass" ? `Access ends on ${fmtDate(PLANS.trip_pass.days)}` : plan === "monthly" ? `Renews on ${fmtDate(30)} at ${money(PLANS.monthly.price)}/month` : renewalLine(settings, renewDate);
-  const manage = <Action className="min-h-9 px-1 text-sm text-link underline" onClick={onManage}>{COPY.manageRenewal}</Action>;
-  return <div className="p-5"><Back title={title} onBack={onBack} />
-    {kind === "active" && reminder && plan === "yearly" && <div className="relative mt-5 rounded-lg border border-warm-border bg-on-dark p-3 pr-10 text-sm shadow-card"><Action aria-label="Dismiss reminder" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={hideReminder}><X /></Action>{reminderLine(fmtDate(365))} {manage}</div>}
-    <div className="mt-8 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{expired ? plan === "trip_pass" ? COPY.expiredPass : COPY.expiredPremium : "You're a Premium user"}</h2><p className="mt-2 font-display text-lg text-warm-brown">{PLANS[plan].name}</p><p className="mt-3 w-full rounded-lg border border-warm-border bg-sand p-3 text-sm">{date}{!expired && plan !== "trip_pass" && <><br />{manage}</>}</p></div>
-    {!expired && kind === "active" && <><div className="mt-5"><Checklist plan={plan} settings={settings} /></div>{NOTIFICATION_FEATURES.filter(f => notified[f.key]).map(f => <p key={f.key} className="mt-2 text-sm text-pgn-muted">{COPY.notifyRow(f.name)}</p>)}</>}
-    <Primary className="mt-7" onClick={expired ? onPlans : onMap}>{expired ? plan === "trip_pass" ? COPY.anotherPass : COPY.renew : "Explore Premium features"}</Primary><div className="text-center"><Restore /></div></div>;
+function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void }) {
+  const pass = plan === "trip_pass";
+  if (kind === "expired") return <div className="flex min-h-full flex-col">
+    <div className="flex-1 p-5"><Action aria-label={STATUS_COPY.close} onClick={onBack} className="h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action>
+      <div className="mt-6 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{pass ? COPY.expiredPass : COPY.expiredPremium}</h2><p className="mt-2 text-pgn-dark">{STATUS_COPY.endedOn(fmtDate(-3))}</p></div>
+      {EXPIRED_TRIPS_NOTE_ON && <p className="mt-6 rounded-lg bg-sand p-3 text-sm text-pgn-dark">{STATUS_COPY.tripsSaved}</p>}
+      <div className="mt-4 rounded-lg border border-warm-border bg-on-dark p-3"><p className="text-[11px] uppercase tracking-wide text-warm-brown">{STATUS_COPY.stillFreeLabel}</p><p className="mt-1 text-sm text-pgn-dark">{COPY.alwaysFree}</p></div></div>
+    <footer className="sticky bottom-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={onPlans}>{pass ? STATUS_COPY.passCta : STATUS_COPY.renewCta}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted">{pass ? STATUS_COPY.passFine : STATUS_COPY.renewFine}</p><div className="flex justify-center gap-3">{pass && <Action className="min-h-9 px-1 text-xs text-link underline" onClick={onPlans}>{COPY.viewPlans}</Action>}<Restore /></div></footer></div>;
+  const renewOff = settings.autoRenewOff && !pass;
+  const renewDate = fmtDate(plan === "monthly" ? 30 : settings.trial ? PLANS.yearly.trialDays : 365);
+  const date = pass ? `Access ends on ${fmtDate(PLANS.trip_pass.days)}` : renewOff ? STATUS_COPY.activeUntil(renewDate) : SUCCESS_COPY.nextCharge(PLANS[plan].price, renewDate);
+  const manage = <Action className="min-h-9 px-1 text-sm text-link underline" onClick={onManage}>{renewOff ? STATUS_COPY.turnOn : COPY.manageRenewal}</Action>;
+  return <div className="p-5"><Back title="Premium active" onBack={onBack} />
+    {reminder && !renewOff && plan === "yearly" && <div className="relative mt-5 rounded-lg border border-warm-border bg-on-dark p-3 pr-10 text-sm shadow-card"><Action aria-label="Dismiss reminder" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={hideReminder}><X /></Action>{reminderLine(fmtDate(365))} {manage}</div>}
+    <div className="mt-8 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">You're a Premium user</h2><p className="mt-2 font-display text-lg text-warm-brown">{PLANS[plan].name}</p><p className="mt-3 w-full rounded-lg border border-warm-border bg-sand p-3 text-sm">{date}{!pass && <><br />{manage}</>}</p></div>
+    <div className="mt-5"><Checklist plan={plan} settings={settings} onOpen={onOpen} /></div>{NOTIFICATION_FEATURES.filter(f => notified[f.key]).map(f => <p key={f.key} className="mt-2 text-sm text-pgn-muted">{COPY.notifyRow(f.name)}</p>)}
+    <Primary className="mt-7" onClick={() => onOpen("map_filter")}>Explore Premium features</Primary><div className="text-center"><Restore /></div></div>;
 }
 function RentalForm({ premium, onBack, onSubmit }: { premium: boolean; onBack: () => void; onSubmit: () => void }) {
   // In production the app attaches a Premium-entitlement flag to the inquiry sent to the booking agent; payload to be confirmed with the dev team and the agent.
@@ -200,7 +205,7 @@ function Seg<T extends string>({ label, value, options, onChange }: { label: str
 const PLAN_LABEL: Record<PlanId, string> = { trip_pass: "Trip Pass", yearly: "Yearly", monthly: "Monthly" };
 function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; settings: OfferSettings; changeSetting: <K extends keyof OfferSettings>(k: K, v: OfferSettings[K]) => void; highlight: PlanId; plans: PlanId[]; setHighlight: (p: PlanId) => void; userState: UserState; applyUser: (u: UserState) => void; resetNotify: () => void; resetRental: () => void; onStyle: () => void }) {
   const [open, setOpen] = useState(true);
-  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["trial", "Yearly free trial (demo only)"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"]] as const;
+  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["trial", "Yearly free trial (demo only)"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"], ["autoRenewOff", STATUS_COPY.autoRenewOff]] as const;
   return <aside id="controls" className="m-4 scroll-mt-4 rounded-lg bg-ctl-panel p-5 text-ctl-ink shadow-card md:m-0 md:max-h-[844px] md:w-80 md:overflow-y-auto"><Action onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 w-full justify-between px-0 text-ctl-ink"><h2 className="text-lg">Prototype controls</h2><ChevronDown className={open ? "rotate-180" : ""} /></Action>{open && <>
     <Seg label="Trigger context" value={p.trigger} onChange={p.applyTrigger} options={[["sidebar", "Sidebar"], ["trip3", "Trip #3"], ["pdf", "PDF export"], ["alerts", FEATURE_NAMES.live_alerts.name], ["sky", FEATURE_NAMES.sky_alerts.name], ["nudge", "Post-save nudge"], ["map", "Map filter"], ["rental", "Rental inquiry"]]} />
     {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={key === "trial" ? p.settings.trial && p.settings.eligible : p.settings[key]} disabled={(key === "eligible" && p.userState === "expired") || (key === "trial" && !p.settings.eligible)} onChange={on => p.changeSetting(key, on)} /></div>)}
