@@ -6,7 +6,8 @@ import { toast } from "sonner";
 export function Action({ className = "", ...props }: ButtonProps) {
   return <Button variant="ghost" className={`h-auto whitespace-normal hover:bg-transparent hover:text-inherit ${className}`} {...props} />;
 }
-export function Primary(props: ButtonProps) { return <Action {...props} className={`btn-cta w-full ${props.className ?? ""}`} />; }
+// The CTA must stay terracotta in every state; override Action's transparent hover with a slightly darker orange.
+export function Primary(props: ButtonProps) { return <Action {...props} className={`btn-cta w-full hover:bg-terracotta-text hover:text-on-dark active:bg-terracotta-text ${props.className ?? ""}`} />; }
 export function Back({ onBack, title }: { onBack: () => void; title: string }) {
   return <div className="flex items-center gap-3"><Action aria-label="Back to menu" onClick={onBack} className="h-11 w-11 shrink-0 rounded-full bg-pgn-dark p-0 text-on-dark"><ArrowLeft /></Action><h1 className="text-[22px] leading-tight text-terracotta">{title}</h1></div>;
 }

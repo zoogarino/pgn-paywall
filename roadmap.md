@@ -20,3 +20,8 @@
 
 # Trip Pass includes planned features
 - [x] Include all Planned features in Trip Pass lists; add TRIP_PASS_PLANNED_NOTE on paywall, Success and active screens.
+
+# Follow-up changes (Oct 2026)
+- [x] Fix CTA transparent-hover bug; Live Guide headline; triggered feature at top incl. Early access group order.
+- [x] Shorter post-save nudge with progress bar and trip-context paywall; rental worked example with fallback; locked map-filter chips.
+- [x] Expired screen plan cards; copy updates; free trial removed completely; README and tests updated.

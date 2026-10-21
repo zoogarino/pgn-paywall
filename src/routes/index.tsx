@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck, SlidersHorizontal } from "lucide-react";
+import { Check, Clock, Heart, Map, RefreshCw, Compass, Construction, HelpCircle, Info, Settings, LogOut, Leaf, ShieldCheck, ChevronDown, Loader2, X, Wifi, BatteryFull, Signal, BadgeCheck, SlidersHorizontal, Fuel, Tent, Mountain, BedDouble, Droplets, Lock } from "lucide-react";
 import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
@@ -9,7 +9,7 @@ import { PremiumSuccess } from "@/components/PremiumSuccess";
 import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
-import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, TRIP_PASS_PLANNED_NOTE, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
+import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, rentalNudge, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, TRIP_PASS_PLANNED_NOTE, MAP_FILTER_PREVIEW_CATEGORIES, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Pocket Guide Premium — Namibia travel plans" },
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/")({
 type Screen = "sidebar" | "paywall" | "success" | "active" | "expired" | "saved" | "style" | "map" | "alerts" | "rental" | "inquiry_sent";
 type SheetKind = "none" | "checkout" | "processing" | "notify" | "sky_notify" | "map_locked" | "filter" | "nudge" | "manage";
 type Notified = NotificationState;
+const CHIP_ICONS = { fuel: Fuel, tent: Tent, mountain: Mountain, bed: BedDouble, droplets: Droplets } as const;
 function Prototype() {
   const [trigger, setTrigger] = useState<Trigger>("sidebar");
   const [settings, setSettings] = useState<OfferSettings>(DEFAULT_SETTINGS);
@@ -44,6 +45,7 @@ function Prototype() {
   const [rentalPopup, setRentalPopup] = useState(false);
   const [rentalShown, setRentalShown] = useState(false);
   const [reminderHidden, setReminderHidden] = useState(false);
+  const [nudgeTrip, setNudgeTrip] = useState<1 | 2>(1);
   const paymentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (paymentTimer.current) clearTimeout(paymentTimer.current); }, []);
   useEffect(() => { if (userState !== "active") { setFilter(null); setAlertsOn(false); setSkyOn(false); } }, [userState]);
@@ -69,6 +71,7 @@ function Prototype() {
     else if (userState === "active") { setScreen("saved"); toast(t === "pdf" ? "PDF export is available (simulated)" : "New trip created (simulated)"); }
     else openPaywall(t, "sidebar");
   };
+  const applyNudgeTrip = (v: 1 | 2) => { setNudgeTrip(v); dismiss(); setTrigger("nudge"); setScreen("saved"); if (userState === "free") setSheet("nudge"); };
   const applyUser = (u: UserState) => { setUserState(u); setSettings(st => ({ ...st, eligible: u !== "expired" })); dismiss(); if (u !== "active") { setFilter(null); setAlertsOn(false); setSkyOn(false); } setScreen(u === "active" ? "active" : u === "expired" ? "expired" : "sidebar"); };
   const confirm = () => {
     const purchase: SuccessPurchase = { plan: selected, settings: { ...settings }, trigger, purchasedAt: new Date().toISOString() };
@@ -104,7 +107,7 @@ function Prototype() {
         {screen === "sidebar" && <Sidebar userState={userState} onPremium={() => userState === "free" ? openPaywall("sidebar") : setScreen(userState === "active" ? "active" : "expired")} onMap={() => setScreen("map")} onAlerts={() => setScreen("alerts")} onRental={() => setScreen("rental")} />}
         {screen === "paywall" && <Paywall trigger={trigger} settings={settings} selected={selected} highlight={highlight} plans={plans} onSelect={setSelected} onClose={() => setScreen(returnScreen)} />}
         {screen === "success" && successPurchase && <PremiumSuccess purchase={successPurchase} notified={notified} onNotify={(key, on) => setNotified(n => ({ ...n, [key]: on }))} onClose={() => { dismiss(); setScreen(successOrigin); }} onContinue={continueSuccess} onManage={() => setSheet("manage")} />}
-        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onOpen={goTo} onMap={() => setScreen("map")} />}
+        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} plans={plans} highlight={highlight} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onOpen={goTo} onMap={() => setScreen("map")} />}
         {screen === "saved" && <div><img src={hero.url} alt="Namib dunes" className="h-64 w-full object-cover" /><div className="p-5"><Back title="Trip saved" onBack={back} /><h2 className="mt-5 text-2xl">Swakopmund → Sossusvlei</h2><p className="text-pgn-muted">3 days · 4 stops · Custom trip</p></div></div>}
         {screen === "style" && <StylePreview onBack={back} />}
         {screen === "map" && <MapScreen onBack={back} filter={filter} clear={() => setFilter(null)} premium={userState === "active"} onFilter={() => setSheet(userState === "active" ? "filter" : "map_locked")} />}
@@ -117,15 +120,28 @@ function Prototype() {
         {screen === "inquiry_sent" && <div className="p-5"><Back title={COPY.rentalSent} onBack={back} /><ShieldCheck className="mx-auto mt-16 h-16 w-16 text-success" /><h2 className="mt-5 text-center text-2xl">{COPY.rentalSent}</h2><p className="mt-3 text-center text-pgn-muted">{COPY.rentalConfirmation}</p></div>}
       </div>
       {screen === "paywall" && <footer className="shrink-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={() => setSheet("checkout")}>{ctaLabel(selected, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted" aria-live="polite">{summary(selected, settings)}</p><PurchaseLinks /></footer>}
-      {rentalPopup && screen === "rental" && <section aria-label="Rental Premium offer" className="absolute bottom-4 left-3 right-3 animate-in slide-in-from-bottom rounded-lg border border-warm-border bg-on-dark p-4 shadow-card motion-reduce:animate-none"><Action aria-label="Dismiss" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={() => setRentalPopup(false)}><X /></Action><p className="pr-6 text-sm text-navy">{COPY.rentalNudge}</p><div className="mt-3 flex gap-2"><Primary onClick={() => { setRentalPopup(false); openPaywall("rental"); }}>{COPY.seePremium}</Primary><Action className="shrink-0 text-link" onClick={() => setRentalPopup(false)}>{COPY.notNow}</Action></div></section>}
+      {rentalPopup && screen === "rental" && <section aria-label="Rental Premium offer" className="absolute bottom-4 left-3 right-3 animate-in slide-in-from-bottom rounded-lg border border-warm-border bg-on-dark p-4 shadow-card motion-reduce:animate-none"><Action aria-label="Dismiss" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={() => setRentalPopup(false)}><X /></Action><p className="pr-6 text-sm text-navy">{rentalNudge(settings)}</p><div className="mt-3 flex gap-2"><Primary onClick={() => { setRentalPopup(false); openPaywall("rental"); }}>{COPY.seePremium}</Primary><Action className="shrink-0 text-link" onClick={() => setRentalPopup(false)}>{COPY.notNow}</Action></div></section>}
       {sheet === "notify" && <NotifySheet title={alertsSheetTitle()} body={COPY.alertsBody} done={notified.alerts} onNotify={() => setNotified(n => ({ ...n, alerts: true }))} onDismiss={dismiss} onPlans={userState !== "active" ? () => openPaywall("alerts") : undefined} />}
       {sheet === "sky_notify" && <NotifySheet title={COPY.skySheetTitle} body={COPY.skyBody} done={notified.sky} onNotify={() => setNotified(n => ({ ...n, sky: true }))} onDismiss={dismiss} onPlans={userState !== "active" ? () => openPaywall("sky") : undefined} />}
-      {(sheet === "map_locked" || sheet === "nudge") && <Sheet label={sheet === "map_locked" ? TRIGGER_COPY.map.headline : "Trip saved"} onDismiss={dismiss}><h2 className="text-xl">{sheet === "map_locked" ? TRIGGER_COPY.map.headline : "Trip saved"}</h2>{sheet === "map_locked" && <p className="mt-1 text-xs text-warm-brown">{FEATURE_NAMES.pin_filter.name}</p>}<p className="mt-3 text-sm text-pgn-muted">{sheet === "map_locked" ? TRIGGER_COPY.map.sub : nudgeCopy(settings)}</p><Primary className="mt-5" onClick={() => openPaywall(sheet === "map_locked" ? "map" : "nudge")}>{COPY.seePremium}</Primary><Action className="mt-2 min-h-11 w-full text-navy" onClick={dismiss}>{COPY.notNow}</Action></Sheet>}
+      {sheet === "map_locked" && <Sheet label={TRIGGER_COPY.map.headline} onDismiss={dismiss}>
+        <h2 className="text-xl">{TRIGGER_COPY.map.headline}</h2>
+        <p className="mt-3 text-sm text-pgn-muted">{COPY.filterLockedSub}</p>
+        <div className="mt-4 flex flex-wrap gap-2">{MAP_FILTER_PREVIEW_CATEGORIES.map(c => { const Icon = CHIP_ICONS[c.icon]; return <button key={c.id} type="button" onClick={() => openPaywall("map")} className="flex min-h-9 items-center gap-1.5 rounded-full border border-warm-border bg-sand px-3 text-xs text-pgn-muted"><Icon aria-hidden="true" className="h-3.5 w-3.5" />{c.label}<Lock aria-hidden="true" className="h-3 w-3" /></button>; })}</div>
+        <Primary className="mt-5" onClick={() => openPaywall("map")}>{COPY.seePremium}</Primary>
+        <Action className="mt-2 min-h-11 w-full text-navy" onClick={dismiss}>{COPY.notNow}</Action>
+      </Sheet>}
+      {sheet === "nudge" && <Sheet label="Trip saved" onDismiss={dismiss}>
+        <h2 className="text-xl">Trip saved</h2>
+        <p className="mt-3 text-sm text-pgn-muted">{nudgeCopy(nudgeTrip)}</p>
+        <div className="mt-3 flex gap-1.5" aria-hidden="true">{([1, 2] as const).map(i => <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= nudgeTrip ? "bg-pgn-accent" : "bg-warm-border"}`} />)}</div>
+        <Primary className="mt-5" onClick={() => openPaywall(nudgeTrip === 1 ? "nudge" : "trip3")}>{COPY.seePremium}</Primary>
+        <Action className="mt-2 min-h-11 w-full text-navy" onClick={dismiss}>{COPY.notNow}</Action>
+      </Sheet>}
       {sheet === "manage" && <Sheet label={COPY.manageRenewal} onDismiss={dismiss}><h2 className="text-xl">{COPY.manageRenewal}</h2><p className="mt-3 text-sm text-pgn-muted">{COPY.manageSheet}</p><Primary className="mt-5" onClick={dismiss}>{COPY.gotIt}</Primary></Sheet>}
       {sheet === "filter" && userState === "active" && <FilterSheet filter={filter} apply={setFilter} onDismiss={dismiss} />}
       {(sheet === "checkout" || sheet === "processing") && <Sheet neutral label="Checkout" onDismiss={dismiss}>{sheet === "processing" ? <div role="status" className="flex flex-col items-center py-10"><Loader2 className="h-10 w-10 animate-spin motion-reduce:animate-none" /><p className="mt-3">Processing…</p></div> : <><p className="text-xs text-ctl-sub">App Store / Google Play checkout, simulated</p><div className="mt-4 flex items-center gap-3"><img src={logo.url} alt="" className="h-12 w-12" /><h2 className="text-xl">{PLANS[selected].name}</h2></div><p className="mt-3 font-bold">{priceLabel(selected, settings)}</p><p className="mt-3 text-xs text-ctl-sub">{disclosure(selected, settings)}</p><Primary className="mt-5" onClick={confirm}>Confirm</Primary><Action className="mt-2 min-h-11 w-full" onClick={dismiss}>Cancel</Action></>}</Sheet>}
     </div>
-    <Controls trigger={trigger} applyTrigger={applyTrigger} settings={settings} changeSetting={changeSetting} highlight={highlight} plans={plans} setHighlight={p => { setHighlightPref(p); setSelected(p); }} userState={userState} applyUser={applyUser} resetNotify={() => setNotified(EMPTY_NOTIFICATIONS)} resetRental={() => setRentalShown(false)} onStyle={() => { dismiss(); setScreen("style"); }} />
+    <Controls trigger={trigger} applyTrigger={applyTrigger} settings={settings} changeSetting={changeSetting} highlight={highlight} plans={plans} setHighlight={p => { setHighlightPref(p); setSelected(p); }} userState={userState} applyUser={applyUser} resetNotify={() => setNotified(EMPTY_NOTIFICATIONS)} resetRental={() => setRentalShown(false)} nudgeTrip={nudgeTrip} applyNudgeTrip={applyNudgeTrip} onStyle={() => { dismiss(); setScreen("style"); }} />
   </main>;
 }
 function NotifySheet({ title, body, done, onNotify, onDismiss, onPlans }: { title: string; body: string; done: boolean; onNotify: () => void; onDismiss: () => void; onPlans?: (() => void) | undefined }) {
@@ -141,19 +157,17 @@ function Paywall({ trigger, settings, selected, highlight, plans, onSelect, onCl
   const id = single ? plans[0] ?? "yearly" : selected;
   const badge = badgeText(id, settings);
   const [main, then] = priceParts(id, settings);
-  const trial = id === "yearly" ? trialLine(settings) : null;
   return <div className="pb-5"><div className="relative h-[20dvh] max-h-40 bg-sand [@media(max-height:700px)]:h-[13dvh]"><img src={hero.url} alt="Paraglider over Namib dunes" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/0 to-transparent" /><Action onClick={onClose} aria-label="Close paywall" className="absolute left-4 top-3 h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action><img src={logo.url} alt="Pocket Guide Namibia logo" className="absolute bottom-0 left-1/2 h-11 w-11 -translate-x-1/2 translate-y-1/3 rounded-full bg-on-dark p-1.5" /></div>
     <div className="px-4 pt-5"><h1 className="text-center text-[24px] leading-tight text-navy">{copy.headline}</h1><p className="mt-1 text-center text-sm text-pgn-muted">{copy.sub}</p>
     {single ? <section aria-label={PLANS[id].name} className="mt-4 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card">
       {badge && <span className="mb-1.5 inline-block rounded bg-gold-gradient px-2 py-0.5 text-xs text-pgn-dark">{badge}</span>}
       <h2 className="text-base text-pgn-dark">{PLANS[id].name}</h2>
       <p className="mt-0.5 text-lg font-bold leading-snug text-navy">{main}{then && <> <span className="whitespace-nowrap">{then}</span></>}</p>
-      {trial && <p className="mt-0.5 text-xs text-pgn-muted">{trial}</p>}
       <FeatureList selected={id} settings={settings} trigger={trigger} />
       <p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted">{finePrint(id, settings)}</p>
     </section> : <>
       <div role="radiogroup" aria-label="Choose a plan" className="mt-4 space-y-2">{plans.map(p => <PlanRow key={p} id={p} settings={settings} on={selected === p} best={highlight === p} onSelect={() => onSelect(p)} />)}</div>
-      <section aria-label="What's included" className="mt-3 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card">{trial && <p className="text-xs text-pgn-muted">{trial}</p>}<FeatureList selected={selected} settings={settings} trigger={trigger} /><p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted" aria-live="polite">{finePrint(selected, settings)}</p></section>
+      <section aria-label="What's included" className="mt-3 rounded-lg border-2 border-warm-border bg-on-dark p-4 text-pgn-dark shadow-card"><FeatureList selected={selected} settings={settings} trigger={trigger} /><p className="mt-3 border-t border-warm-border pt-2.5 text-[11px] leading-relaxed text-pgn-muted" aria-live="polite">{finePrint(selected, settings)}</p></section>
     </>}
     <div className="mt-5 flex gap-2 border-y border-warm-border py-4"><ShieldCheck className="h-5 w-5 shrink-0 text-warm-brown" /><p className="text-xs leading-relaxed text-pgn-dark">{COPY.alwaysFree}</p></div><div className="mt-4 flex gap-2"><Leaf className="h-4 w-4 shrink-0 text-warm-brown" /><p className="text-xs text-pgn-muted">{COPY.conservation}</p></div>
     <p className="mt-4 text-[11px] leading-relaxed text-pgn-muted">{featureDisclaimer(selected, settings)}</p></div></div>;
@@ -171,22 +185,30 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
   const row = (f: PaywallFeature, coming: boolean) => <li key={f.id} className={`flex items-start gap-2 rounded-md ${f.highlight ? "-mx-1.5 bg-sand px-1.5 py-1" : ""}`}>
     {coming ? <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warm-brown" /> : <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${f.available ? "bg-terracotta text-on-dark" : "bg-toggle-off text-pgn-dark"}`}><Check className="h-3 w-3" /></span>}
     <span className="min-w-0 flex-1"><span className={`${coming || !f.available ? "text-pgn-muted" : "text-pgn-dark"}`}>{f.name}</span>{f.tag && <span className="ml-1.5 inline-block rounded bg-sand px-1.5 py-0.5 text-[10px] text-warm-brown">{f.tag}</span>}
-    {f.desc && <span className="block truncate text-[11px] text-pgn-muted">{f.desc}</span>}
+    {f.desc && <span className="block text-[11px] leading-snug text-pgn-muted">{f.desc}</span>}
     {!f.available && <span className="block text-[11px] text-pgn-muted">Not included in {PLANS[selected].name}</span>}</span></li>;
-  return <div>{g.included.length > 0 && <><p className={label}>{COPY.includedToday}</p><ul className="mt-1.5 space-y-2 text-sm">{g.included.map(f => row(f, false))}</ul></>}
-    {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
-    {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul>{selected === "trip_pass" && <p className="mt-1.5 text-[11px] text-pgn-muted">{TRIP_PASS_PLANNED_NOTE}</p>}</>}</div>;
+  // Triggered feature always at the top: an early-access trigger moves the whole Early access group above Included today.
+  const sections = [
+    ...(g.earlyFirst
+      ? [{ items: g.early, title: COPY.earlyAccess, coming: false }, { items: g.included, title: COPY.includedToday, coming: false }]
+      : [{ items: g.included, title: COPY.includedToday, coming: false }, { items: g.early, title: COPY.earlyAccess, coming: false }]),
+    { items: g.coming, title: COPY.comingSoon, coming: true },
+  ];
+  return <div>{sections.filter(s => s.items.length > 0).map(s => <div key={s.title}><p className={label}>{s.title}</p><ul className="mt-1.5 space-y-2 text-sm">{s.items.map(f => row(f, s.coming))}</ul>{s.coming && selected === "trip_pass" && <p className="mt-1.5 text-[11px] text-pgn-muted">{TRIP_PASS_PLANNED_NOTE}</p>}</div>)}</div>;
 }
-function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen, onMap }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void; onMap: () => void }) {
+function Status({ kind, plan, plans, highlight, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen, onMap }: { kind: "active" | "expired"; plan: PlanId; plans: PlanId[]; highlight: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void; onMap: () => void }) {
   const pass = plan === "trip_pass";
+  const [expiredSel, setExpiredSel] = useState<PlanId | null>(null);
+  const expiredPlan = expiredSel && plans.includes(expiredSel) ? expiredSel : plans.includes(plan) ? plan : highlight;
   if (kind === "expired") return <div className="flex min-h-full flex-col">
     <div className="flex-1 p-5"><Action aria-label={STATUS_COPY.close} onClick={onBack} className="h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action>
       <div className="mt-6 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{pass ? COPY.expiredPass : COPY.expiredPremium}</h2><p className="mt-2 text-pgn-dark">{STATUS_COPY.endedOn(fmtDate(-3))}</p></div>
       {EXPIRED_TRIPS_NOTE_ON && <p className="mt-6 rounded-lg bg-sand p-3 text-sm text-pgn-dark">{STATUS_COPY.tripsSaved}</p>}
-      <div className="mt-4 rounded-lg border border-warm-border bg-on-dark p-3"><p className="text-[11px] uppercase tracking-wide text-warm-brown">{STATUS_COPY.stillFreeLabel}</p><p className="mt-1 text-sm text-pgn-dark">{COPY.alwaysFree}</p></div></div>
-    <footer className="sticky bottom-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={onPlans}>{pass ? STATUS_COPY.passCta : STATUS_COPY.renewCta}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted">{pass ? STATUS_COPY.passFine : STATUS_COPY.renewFine}</p><div className="flex justify-center gap-3">{pass && <Action className="min-h-9 px-1 text-xs text-link underline" onClick={onPlans}>{COPY.viewPlans}</Action>}<Restore /></div></footer></div>;
+      <p className="mt-3 text-xs leading-relaxed text-pgn-muted">{COPY.alwaysFree}</p>
+      <div role="radiogroup" aria-label="Choose a plan" className="mt-5 space-y-2">{plans.map(p => <PlanRow key={p} id={p} settings={settings} on={expiredPlan === p} best={highlight === p} onSelect={() => setExpiredSel(p)} />)}</div></div>
+    <footer className="sticky bottom-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={onPlans}>{ctaLabel(expiredPlan, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted">{finePrint(expiredPlan, settings)}</p><div className="text-center"><Restore /></div></footer></div>;
   const renewOff = settings.autoRenewOff && !pass;
-  const renewDate = fmtDate(plan === "monthly" ? 30 : settings.trial ? PLANS.yearly.trialDays : 365);
+  const renewDate = fmtDate(plan === "monthly" ? 30 : 365);
   const date = pass ? `Access ends on ${fmtDate(PLANS.trip_pass.days)}` : renewOff ? STATUS_COPY.activeUntil(renewDate) : SUCCESS_COPY.nextCharge(PLANS[plan].price, renewDate);
   const manage = <Action className="min-h-9 px-1 text-sm text-link underline" onClick={onManage}>{renewOff ? STATUS_COPY.turnOn : COPY.manageRenewal}</Action>;
   return <div className="p-5"><Back title="Premium active" onBack={onBack} />
@@ -199,16 +221,17 @@ function RentalForm({ premium, onBack, onSubmit }: { premium: boolean; onBack: (
   // In production the app attaches a Premium-entitlement flag to the inquiry sent to the booking agent; payload to be confirmed with the dev team and the agent.
   return <div className="p-5 pb-48"><Back title={COPY.rentalTitle} onBack={onBack} />{premium && <p className="mt-5 flex items-center gap-2 rounded-full bg-sand px-3 py-2 text-xs text-navy"><BadgeCheck className="h-4 w-4 shrink-0 text-warm-brown" />{COPY.rentalChip}</p>}<form onSubmit={e => { e.preventDefault(); onSubmit(); }} className="mt-7 space-y-5">{[["Name", "text"], ["Pick-up date", "date"], ["Return date", "date"]].map(([label, type]) => <label className="block text-sm text-warm-brown" key={label}>{label}<input required name={label} type={type} className="mt-2 h-12 w-full rounded-lg border border-input-border bg-on-dark px-3 text-navy" /></label>)}<Primary type="submit">Submit</Primary></form></div>;
 }
-function Seg<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
+function Seg<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return <fieldset className="mt-4"><legend className="mb-1.5 text-xs text-ctl-sub">{label}</legend><div className="flex flex-wrap gap-1.5">{options.map(([v, l]) => <button type="button" key={v} onClick={() => onChange(v)} aria-pressed={value === v} className={`min-h-9 rounded-full border px-3 text-sm ${value === v ? "border-ctl-ink bg-ctl-ink text-ctl-panel" : "border-ctl-line bg-ctl-panel text-ctl-ink"}`}>{l}</button>)}</div></fieldset>;
 }
 const PLAN_LABEL: Record<PlanId, string> = { trip_pass: "Trip Pass", yearly: "Yearly", monthly: "Monthly" };
-function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; settings: OfferSettings; changeSetting: <K extends keyof OfferSettings>(k: K, v: OfferSettings[K]) => void; highlight: PlanId; plans: PlanId[]; setHighlight: (p: PlanId) => void; userState: UserState; applyUser: (u: UserState) => void; resetNotify: () => void; resetRental: () => void; onStyle: () => void }) {
+function Controls(p: { trigger: Trigger; applyTrigger: (t: Trigger) => void; settings: OfferSettings; changeSetting: <K extends keyof OfferSettings>(k: K, v: OfferSettings[K]) => void; highlight: PlanId; plans: PlanId[]; setHighlight: (p: PlanId) => void; userState: UserState; applyUser: (u: UserState) => void; resetNotify: () => void; resetRental: () => void; nudgeTrip: 1 | 2; applyNudgeTrip: (v: 1 | 2) => void; onStyle: () => void }) {
   const [open, setOpen] = useState(true);
-  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["trial", "Yearly free trial (demo only)"], ["rental", "Rental discount line"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"], ["autoRenewOff", STATUS_COPY.autoRenewOff]] as const;
+  const toggles = [["launch", `Launch offer (${money(PLANS.yearly.firstYearPrice)} then ${money(PLANS.yearly.price)})`], ["eligible", "Intro price eligible"], ["rental", "Rental discount line"], ["rentalExample", "Rental example figures"], ["showTripPass", "Show Trip Pass"], ["showMonthly", "Show Monthly"], ["reminder", "Pre-renewal reminder"], ["autoRenewOff", STATUS_COPY.autoRenewOff]] as const;
   return <aside id="controls" className="m-4 scroll-mt-4 rounded-lg bg-ctl-panel p-5 text-ctl-ink shadow-card md:m-0 md:max-h-[844px] md:w-80 md:overflow-y-auto"><Action onClick={() => setOpen(!open)} aria-expanded={open} className="min-h-11 w-full justify-between px-0 text-ctl-ink"><h2 className="text-lg">Prototype controls</h2><ChevronDown className={open ? "rotate-180" : ""} /></Action>{open && <>
     <Seg label="Trigger context" value={p.trigger} onChange={p.applyTrigger} options={[["sidebar", "Sidebar"], ["trip3", "Trip #3"], ["pdf", "PDF export"], ["alerts", FEATURE_NAMES.live_alerts.name], ["sky", FEATURE_NAMES.sky_alerts.name], ["nudge", "Post-save nudge"], ["map", "Map filter"], ["rental", "Rental inquiry"]]} />
-    {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={key === "trial" ? p.settings.trial && p.settings.eligible : p.settings[key]} disabled={(key === "eligible" && p.userState === "expired") || (key === "trial" && !p.settings.eligible)} onChange={on => p.changeSetting(key, on)} /></div>)}
+    <Seg<1 | 2> label="Post-save" value={p.nudgeTrip} onChange={p.applyNudgeTrip} options={[[1, "1st trip"], [2, "2nd trip"]]} />
+    {toggles.map(([key, label]) => <div key={key} className="mt-4 flex items-center justify-between gap-2 text-sm"><span>{label}</span><Toggle label={label} on={p.settings[key]} disabled={key === "eligible" && p.userState === "expired"} onChange={on => p.changeSetting(key, on)} /></div>)}
     {p.plans.length > 1 && <Seg label="Highlighted plan" value={p.highlight} onChange={p.setHighlight} options={p.plans.map(id => [id, PLAN_LABEL[id]] as [PlanId, string])} />}
     <label className="mt-4 block text-xs text-ctl-sub">Offer end date (blank = none)<input value={p.settings.offerEnd ?? ""} onChange={e => p.changeSetting("offerEnd", e.target.value || null)} placeholder="e.g. 31 March 2027" className="mt-1.5 h-10 w-full rounded-lg border border-ctl-line bg-ctl-panel px-3 text-sm text-ctl-ink" /></label>
     <Seg<AlertsStatus> label={COPY.liveGuideStatus} value={p.settings.alerts} onChange={v => p.changeSetting("alerts", v)} options={[["coming_soon", COPY.comingSoon], ["early_access", "Early access"], ["released", "Released"]]} />

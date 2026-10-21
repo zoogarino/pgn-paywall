@@ -62,8 +62,8 @@ export function StylePreview({ onBack }: { onBack: () => void }) {
 
       <Label>Buttons</Label>
       <div className="space-y-2">
-        <button className="btn-cta w-full">Start free trial</button>
-        <button className="btn-cta w-full" disabled>Start free trial (disabled)</button>
+        <button className="btn-cta w-full">Get Premium</button>
+        <button className="btn-cta w-full" disabled>Get Premium (disabled)</button>
         <button className="btn-secondary w-full">Contact us</button>
         <button className="min-h-[52px] w-full rounded-full border-2 border-navy font-bold text-navy">Cancel</button>
         <button className="min-h-[52px] w-full rounded-full bg-danger font-bold text-on-dark">Delete Account Permanently</button>
