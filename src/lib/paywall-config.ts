@@ -91,6 +91,8 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
   map: { headline: "Filter the map to what matters.", sub: "Premium members see only what's relevant to their trip." },
 };
 export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
+// Placeholder wording, pending legal review. Shown under the Planned group for the Trip Pass only.
+export const TRIP_PASS_PLANNED_NOTE = "Planned features are available to Trip Pass holders while their pass is active.";
 export type FeatureItem = { id?: FeatureId; name: string; desc?: string | undefined; tag?: string };
 export function featureGroups(id: PlanId, s: OfferSettings) {
   const groups = paywallFeatures(id, s, "sidebar");
@@ -152,16 +154,16 @@ export type FeatureId = typeof FEATURE_ORDER[number] | typeof PLANNED_ORDER[numb
 export const TRIGGER_FEATURE: Partial<Record<Trigger, FeatureId>> = { trip3: "custom_trips", pdf: "pdf_export", map: "location_filter", rental: "rental_discount", sky: "sky_outlook", alerts: "live_guide" };
 export type PaywallFeature = { id: FeatureId; name: string; desc?: string | undefined; tag?: string; plans: PlanId[]; available: boolean; highlight: boolean };
 function catalogue(s: OfferSettings) {
+  // The Trip Pass includes ALL Premium features, planned ones included; only the rental discount is plan-limited.
   const all: PlanId[] = ["trip_pass", "yearly", "monthly"];
-  const notTrip = (st: string) => st !== "released" ? all.filter(p => p !== "trip_pass") : all;
   const list: { id: FeatureId; name: string; desc?: string; plans: PlanId[]; status: AlertsStatus; date: string | null; enabled: boolean }[] = [
     { id: "rental_discount", name: `${RENTAL_DISCOUNT_PERCENT}% discount on Pocket Guide-booked car rentals`, desc: "Applied when you book your rental through Pocket Guide Namibia", plans: RENTAL_DISCOUNT_PLANS, status: "released", date: null, enabled: s.rental },
     { id: "custom_trips", name: `Up to ${PREMIUM_CAP_TRIPS} custom trips`, plans: all, status: "released", date: null, enabled: true },
     { id: "pdf_export", name: FEATURE_NAMES.pdf_export.name, plans: all, status: "released", date: null, enabled: true },
     { id: "location_filter", name: FEATURE_NAMES.pin_filter.name, desc: FEATURE_NAMES.pin_filter.short, plans: all, status: "released", date: null, enabled: true },
-    { id: "sky_outlook", name: FEATURE_NAMES.sky_alerts.name, desc: FEATURE_NAMES.sky_alerts.short, plans: notTrip(s.sky), status: s.sky, date: SKY_ALERTS_RELEASE_LABEL, enabled: true },
-    { id: "live_guide", name: FEATURE_NAMES.live_alerts.name, desc: FEATURE_NAMES.live_alerts.short, plans: notTrip(s.alerts), status: s.alerts, date: LIVE_ALERTS_RELEASE_LABEL, enabled: true },
-    { id: "emergency_support", name: FEATURE_NAMES.emergency_support.name, desc: FEATURE_NAMES.emergency_support.desc, plans: notTrip(s.emergency), status: s.emergency, date: EMERGENCY_SUPPORT_RELEASE_LABEL, enabled: true },
+    { id: "sky_outlook", name: FEATURE_NAMES.sky_alerts.name, desc: FEATURE_NAMES.sky_alerts.short, plans: all, status: s.sky, date: SKY_ALERTS_RELEASE_LABEL, enabled: true },
+    { id: "live_guide", name: FEATURE_NAMES.live_alerts.name, desc: FEATURE_NAMES.live_alerts.short, plans: all, status: s.alerts, date: LIVE_ALERTS_RELEASE_LABEL, enabled: true },
+    { id: "emergency_support", name: FEATURE_NAMES.emergency_support.name, desc: FEATURE_NAMES.emergency_support.desc, plans: all, status: s.emergency, date: EMERGENCY_SUPPORT_RELEASE_LABEL, enabled: true },
   ];
   const order: readonly FeatureId[] = [...FEATURE_ORDER, ...PLANNED_ORDER];
   return list.filter(f => f.enabled).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -291,7 +293,6 @@ export function successContinuation(p: SuccessPurchase) {
   return SUCCESS_CONTINUATIONS[p.trigger];
 }
 export function successPlanned(p: SuccessPurchase) {
-  if (p.plan === "trip_pass") return [];
   return paywallFeatures(p.plan, p.settings, "sidebar").coming.filter(f => f.available);
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Check, Clock, ArrowLeft, X, Star, ChevronRight } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { COPY, STATUS_COPY, featureDestination, type SuccessDestination, featureGroups, type FeatureItem, type PlanId, type OfferSettings } from "@/lib/paywall-config";
+import { COPY, STATUS_COPY, TRIP_PASS_PLANNED_NOTE, featureDestination, type SuccessDestination, featureGroups, type FeatureItem, type PlanId, type OfferSettings } from "@/lib/paywall-config";
 import { toast } from "sonner";
 export function Action({ className = "", ...props }: ButtonProps) {
   return <Button variant="ghost" className={`h-auto whitespace-normal hover:bg-transparent hover:text-inherit ${className}`} {...props} />;
@@ -25,7 +25,7 @@ export function Checklist({ plan, settings, extras = [], dark = false, onOpen }:
   const groups = featureGroups(plan, settings);
   const label = `mt-4 text-[11px] uppercase tracking-wide ${dark ? "text-on-dark/80" : "text-warm-brown"}`;
   const sections = [{ items: groups.included, title: COPY.includedToday, coming: false, open: onOpen }, { items: groups.early, title: COPY.earlyAccess, coming: false, open: undefined }, { items: groups.coming, title: COPY.comingSoon, coming: true, open: undefined }];
-  return <div>{sections.filter(section => section.items.length > 0).map(section => <div key={section.title}><p className={label}>{section.title}</p><ul className="mt-2 space-y-2.5 text-sm">{section.items.map(item => <Item key={item.name} item={item} dark={dark} coming={section.coming} onOpen={section.open} />)}</ul></div>)}{extras.length > 0 && <ul className="mt-4 space-y-1.5 text-sm">{extras.map(e => <li key={e}>{e}</li>)}</ul>}</div>;
+  return <div>{sections.filter(section => section.items.length > 0).map(section => <div key={section.title}><p className={label}>{section.title}</p><ul className="mt-2 space-y-2.5 text-sm">{section.items.map(item => <Item key={item.name} item={item} dark={dark} coming={section.coming} onOpen={section.open} />)}</ul>{section.coming && plan === "trip_pass" && <p className={`mt-2 text-xs ${dark ? "text-on-dark/80" : "text-pgn-muted"}`}>{TRIP_PASS_PLANNED_NOTE}</p>}</div>)}{extras.length > 0 && <ul className="mt-4 space-y-1.5 text-sm">{extras.map(e => <li key={e}>{e}</li>)}</ul>}</div>;
 }
 export function Restore() { return <Action className="min-h-9 px-1 text-xs text-link underline" onClick={() => toast("No previous purchases found (simulated)")}>{COPY.restore}</Action>; }
 export function PurchaseLinks() { return <div className="flex flex-wrap items-center justify-center gap-x-3"><Restore />{[COPY.terms, COPY.privacy, COPY.eula].map(label => <a className="py-2 text-xs text-link underline" href="#" key={label}>{label}</a>)}</div>; }

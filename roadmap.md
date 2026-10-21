@@ -17,3 +17,6 @@
 
 # Developer handoff
 - [x] Deliver a plain-text inventory of screens, pop-ups, alternate states and production caveats.
+
+# Trip Pass includes planned features
+- [x] Include all Planned features in Trip Pass lists; add TRIP_PASS_PLANNED_NOTE on paywall, Success and active screens.
