@@ -13,7 +13,7 @@ export function Back({ onBack, title }: { onBack: () => void; title: string }) {
 export function PremiumStar({ large = false }: { large?: boolean }) {
   return <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-full bg-gold-gradient ${large ? "h-20 w-20" : "h-8 w-8"}`}><Star className={`${large ? "h-10 w-10" : "h-4 w-4"} fill-on-dark text-on-dark`} /></span>;
 }
-function Item({ item, dark, coming = false, onOpen }: { item: FeatureItem; dark: boolean; coming?: boolean; onOpen?: (d: SuccessDestination) => void }) {
+function Item({ item, dark, coming = false, onOpen }: { item: FeatureItem; dark: boolean; coming?: boolean; onOpen?: ((d: SuccessDestination) => void) | undefined }) {
   const dest = !coming && onOpen ? featureDestination(item.id) : null;
   const icon = coming ? <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warm-brown" /> : <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${dark ? "bg-on-dark/20 text-on-dark" : "bg-terracotta text-on-dark"}`}><Check className="h-3 w-3" /></span>;
   const text = <span className={`min-w-0 flex-1 ${coming ? "text-pgn-muted" : ""}`}><span>{item.name}</span>{item.tag && <span className="ml-1.5 inline-block rounded bg-sand px-1.5 py-0.5 text-[10px] text-warm-brown">{item.tag}</span>}{item.desc && <span className={`block text-xs ${dark ? "text-on-dark/80" : "text-pgn-muted"}`}>{item.desc}</span>}</span>;
