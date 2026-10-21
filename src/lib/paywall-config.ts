@@ -41,8 +41,8 @@ export const FEATURE_NAMES = {
 } as const;
 // eligible: production reads intro-offer eligibility from the store / RevenueCat, never from user state.
 // trial: demo only. The trial cannot be combined with the intro price as an App Store introductory offer; to be decided with the developers.
-export type OfferSettings = { eligible: boolean; launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; emergency: AlertsStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null };
-export const DEFAULT_SETTINGS: OfferSettings = { eligible: true, launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, emergency: EMERGENCY_SUPPORT_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE };
+export type OfferSettings = { eligible: boolean; launch: boolean; trial: boolean; rental: boolean; alerts: AlertsStatus; sky: SkyStatus; emergency: AlertsStatus; showTripPass: boolean; showMonthly: boolean; reminder: boolean; offerEnd: string | null; autoRenewOff: boolean };
+export const DEFAULT_SETTINGS: OfferSettings = { eligible: true, launch: YEARLY_LAUNCH_PRICE_ON, trial: YEARLY_FREE_TRIAL_ON, rental: RENTAL_DISCOUNT_ON, alerts: LIVE_ALERTS_STATUS, sky: SKY_ALERTS_STATUS, emergency: EMERGENCY_SUPPORT_STATUS, showTripPass: SHOW_TRIP_PASS, showMonthly: SHOW_MONTHLY, reminder: PRE_RENEWAL_REMINDER_ON, offerEnd: OFFER_END_DATE, autoRenewOff: false };
 export const launchEnabled = (s: OfferSettings) => s.launch;
 export const visiblePlans = (s: OfferSettings) => PLAN_ORDER.filter(p => p === "yearly" || (p === "trip_pass" ? s.showTripPass : s.showMonthly));
 export const resolveHighlight = (wanted: PlanId | null, s: OfferSettings): PlanId => { const v = visiblePlans(s); return wanted && v.includes(wanted) ? wanted : v[0] ?? "yearly"; };
@@ -91,7 +91,7 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
   map: { headline: "Filter the map to what matters.", sub: "Premium members see only what's relevant to their trip." },
 };
 export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
-export type FeatureItem = { name: string; desc?: string | undefined; tag?: string };
+export type FeatureItem = { id?: FeatureId; name: string; desc?: string | undefined; tag?: string };
 export function featureGroups(id: PlanId, s: OfferSettings) {
   const groups = paywallFeatures(id, s, "sidebar");
   const available = (items: PaywallFeature[]): FeatureItem[] => items.filter(f => f.available);
@@ -294,3 +294,23 @@ export function successPlanned(p: SuccessPurchase) {
   if (p.plan === "trip_pass") return [];
   return paywallFeatures(p.plan, p.settings, "sidebar").coming.filter(f => f.available);
 }
+
+// Placeholder, pending a decision with the developers on what happens to trips beyond the free limit of 2.
+export const EXPIRED_TRIPS_NOTE_ON = true;
+export const STATUS_COPY = {
+  close: "Close", endedOn: (date: string) => `Ended on ${date}.`, tripsSaved: "Your trips are saved.", stillFreeLabel: "Still free for you",
+  renewCta: `Renew Premium - ${money(PLANS.yearly.price)}/year`,
+  renewFine: `${money(PLANS.yearly.price)}/year. Renews automatically until you cancel in your App Store or Google Play settings.`,
+  passCta: `Get another Trip Pass - ${money(PLANS.trip_pass.price)}`,
+  passFine: `One-time payment of ${money(PLANS.trip_pass.price)} for ${PLANS.trip_pass.days} days. Does not auto-renew.`,
+  autoRenewOff: "Auto-renew off",
+  activeUntil: (date: string) => `Premium is active until ${date}. Auto-renew is off.`,
+  turnOn: "Turn auto-renew back on", rentalLink: "Send a rental inquiry",
+};
+// Premium active rows reuse the Success screen destinations.
+export const FEATURE_DESTINATIONS: Partial<Record<FeatureId, SuccessDestination>> = {
+  location_filter: "map_filter", rental_discount: "rental", custom_trips: "trip_creation", pdf_export: "pdf_export", sky_outlook: "sky",
+};
+// Destination screens built in this prototype; others render as plain rows.
+export const BUILT_DESTINATIONS: SuccessDestination[] = ["map_filter", "rental", "sky", "alerts", "main"];
+export const featureDestination = (id?: FeatureId) => { const d = id ? FEATURE_DESTINATIONS[id] : undefined; return d && BUILT_DESTINATIONS.includes(d) ? d : null; };
