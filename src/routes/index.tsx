@@ -104,7 +104,7 @@ function Prototype() {
         {screen === "sidebar" && <Sidebar userState={userState} onPremium={() => userState === "free" ? openPaywall("sidebar") : setScreen(userState === "active" ? "active" : "expired")} onMap={() => setScreen("map")} onAlerts={() => setScreen("alerts")} onRental={() => setScreen("rental")} />}
         {screen === "paywall" && <Paywall trigger={trigger} settings={settings} selected={selected} highlight={highlight} plans={plans} onSelect={setSelected} onClose={() => setScreen(returnScreen)} />}
         {screen === "success" && successPurchase && <PremiumSuccess purchase={successPurchase} notified={notified} onNotify={(key, on) => setNotified(n => ({ ...n, [key]: on }))} onClose={() => { dismiss(); setScreen(successOrigin); }} onContinue={continueSuccess} onManage={() => setSheet("manage")} />}
-        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onOpen={goTo} />}
+        {(screen === "active" || screen === "expired") && <Status kind={screen} plan={statusPlan} settings={settings} notified={notified} reminder={settings.reminder && !reminderHidden} hideReminder={() => setReminderHidden(true)} onManage={() => setSheet("manage")} onBack={back} onPlans={() => openPaywall("sidebar")} onOpen={goTo} onMap={() => setScreen("map")} />}
         {screen === "saved" && <div><img src={hero.url} alt="Namib dunes" className="h-64 w-full object-cover" /><div className="p-5"><Back title="Trip saved" onBack={back} /><h2 className="mt-5 text-2xl">Swakopmund → Sossusvlei</h2><p className="text-pgn-muted">3 days · 4 stops · Custom trip</p></div></div>}
         {screen === "style" && <StylePreview onBack={back} />}
         {screen === "map" && <MapScreen onBack={back} filter={filter} clear={() => setFilter(null)} premium={userState === "active"} onFilter={() => setSheet(userState === "active" ? "filter" : "map_locked")} />}
@@ -177,7 +177,7 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
     {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
     {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
 }
-function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void }) {
+function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen, onMap }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void; onMap: () => void }) {
   const pass = plan === "trip_pass";
   if (kind === "expired") return <div className="flex min-h-full flex-col">
     <div className="flex-1 p-5"><Action aria-label={STATUS_COPY.close} onClick={onBack} className="h-11 w-11 rounded-full bg-pgn-dark p-0 text-on-dark"><X /></Action>
@@ -193,7 +193,7 @@ function Status({ kind, plan, settings, notified, reminder, hideReminder, onMana
     {reminder && !renewOff && plan === "yearly" && <div className="relative mt-5 rounded-lg border border-warm-border bg-on-dark p-3 pr-10 text-sm shadow-card"><Action aria-label="Dismiss reminder" className="absolute right-1 top-1 h-9 w-9 p-0 text-pgn-muted" onClick={hideReminder}><X /></Action>{reminderLine(fmtDate(365))} {manage}</div>}
     <div className="mt-8 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">You're a Premium user</h2><p className="mt-2 font-display text-lg text-warm-brown">{PLANS[plan].name}</p><p className="mt-3 w-full rounded-lg border border-warm-border bg-sand p-3 text-sm">{date}{!pass && <><br />{manage}</>}</p></div>
     <div className="mt-5"><Checklist plan={plan} settings={settings} onOpen={onOpen} /></div>{NOTIFICATION_FEATURES.filter(f => notified[f.key]).map(f => <p key={f.key} className="mt-2 text-sm text-pgn-muted">{COPY.notifyRow(f.name)}</p>)}
-    <Primary className="mt-7" onClick={() => onOpen("map_filter")}>Explore Premium features</Primary><div className="text-center"><Restore /></div></div>;
+    <Primary className="mt-7" onClick={onMap}>Explore Premium features</Primary><div className="text-center"><Restore /></div></div>;
 }
 function RentalForm({ premium, onBack, onSubmit }: { premium: boolean; onBack: () => void; onSubmit: () => void }) {
   // In production the app attaches a Premium-entitlement flag to the inquiry sent to the booking agent; payload to be confirmed with the dev team and the agent.
