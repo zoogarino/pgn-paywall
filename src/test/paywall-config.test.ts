@@ -108,3 +108,17 @@ describe("Follow-up copy rules", () => {
     expect(COPY.conservation).toContain("every purchase");
   });
 });
+import { rentalEligible } from "@/lib/paywall-config";
+describe("Rental discount eligibility", () => {
+  it("requires the discount on and a Yearly or Trip Pass plan", () => {
+    expect(rentalEligible("yearly", S)).toBe(true);
+    expect(rentalEligible("trip_pass", S)).toBe(true);
+    expect(rentalEligible("monthly", S)).toBe(false);
+    expect(rentalEligible("yearly", { ...S, rental: false })).toBe(false);
+  });
+});
+describe("Intro-ineligible override", () => {
+  it("applies to the Sidebar only; nudge keeps its trip headline", () => {
+    expect(paywallCopy("nudge", NE).headline).toBe("Plan up to 20 trips with Premium.");
+  });
+});

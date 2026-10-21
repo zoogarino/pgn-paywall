@@ -147,7 +147,7 @@ export function badgeText(id: PlanId, s: OfferSettings) {
 }
 export const WELCOME_BACK = { headline: "Welcome back to Premium", sub: "Pick up where you left off." };
 export function paywallCopy(t: Trigger, s: OfferSettings) {
-  if (!s.eligible && (t === "sidebar" || t === "nudge")) return WELCOME_BACK;
+  if (!s.eligible && t === "sidebar") return WELCOME_BACK;
   return TRIGGER_COPY[t];
 }
 // The order is a hypothesis; change it here only.
@@ -313,3 +313,6 @@ export const FEATURE_DESTINATIONS: Partial<Record<FeatureId, SuccessDestination>
 // Destination screens built in this prototype; others render as plain rows.
 export const BUILT_DESTINATIONS: SuccessDestination[] = ["map_filter", "rental", "sky", "alerts", "main"];
 export const featureDestination = (id?: FeatureId) => { const d = id ? FEATURE_DESTINATIONS[id] : undefined; return d && BUILT_DESTINATIONS.includes(d) ? d : null; };
+
+/** Rental discount applies only when the discount is enabled and the plan includes it (Yearly or Trip Pass, never Monthly). */
+export const rentalEligible = (plan: PlanId, settings: OfferSettings) => settings.rental && plan !== "monthly";

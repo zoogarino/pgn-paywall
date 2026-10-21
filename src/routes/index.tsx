@@ -6,7 +6,7 @@ import logo from "@/assets/pgnlogo.png.asset.json";
 import hero from "@/assets/hero.jpg.asset.json";
 import { StylePreview } from "@/components/StylePreview";
 import { PremiumSuccess } from "@/components/PremiumSuccess";
-import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
+import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase , rentalEligible } from "@/lib/paywall-config";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
 import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, rentalNudge, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, TRIP_PASS_PLANNED_NOTE, MAP_FILTER_PREVIEW_CATEGORIES, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
@@ -53,9 +53,9 @@ function Prototype() {
   useEffect(() => { if (settings.sky === "coming_soon") setSkyOn(false); if (sheet === "sky_notify" && settings.sky !== "coming_soon") setSheet("none"); }, [settings.sky, sheet]);
   // Rental pop-up: immediately on the inquiry screen, once per session, free/expired only.
   useEffect(() => {
-    if (screen === "rental" && userState !== "active" && !rentalShown) { setRentalPopup(true); setRentalShown(true); }
+    if (screen === "rental" && userState !== "active" && settings.rental && !rentalShown) { setRentalPopup(true); setRentalShown(true); }
     if (screen !== "rental" || userState === "active") setRentalPopup(false);
-  }, [screen, userState, rentalShown]);
+  }, [screen, userState, rentalShown, settings.rental]);
   const dismiss = () => { if (paymentTimer.current) clearTimeout(paymentTimer.current); setSheet("none"); };
   const openPaywall = (t: Trigger, from: Screen = screen) => { dismiss(); setTrigger(t); setReturnScreen(from); setScreen("paywall"); };
   const tapAlerts = (on: boolean) => { if (settings.alerts === "coming_soon") setSheet("notify"); else if (userState !== "active") openPaywall("alerts", "alerts"); else setAlertsOn(on); };
@@ -116,7 +116,7 @@ function Prototype() {
           <div className="mt-5 flex items-center justify-between gap-3 border-t border-warm-border pt-5"><div><p className="text-sm">{FEATURE_NAMES.sky_alerts.name}</p><p className="text-xs text-pgn-muted">{settings.sky === "coming_soon" ? COPY.comingSoon : FEATURE_NAMES.sky_alerts.desc}</p></div><Toggle label={`Enable ${FEATURE_NAMES.sky_alerts.name}`} on={skyOn} onChange={tapSky} /></div>
           {notified.alerts && <p className="mt-6 text-sm text-success">{COPY.notifyRow(FEATURE_NAMES.live_alerts.name)}</p>}
           {notified.sky && <p className="mt-2 text-sm text-success">{COPY.notifyRow(FEATURE_NAMES.sky_alerts.name)}</p>}</div>}
-        {screen === "rental" && <RentalForm premium={userState === "active"} onBack={back} onSubmit={() => setScreen("inquiry_sent")} />}
+        {screen === "rental" && <RentalForm premium={userState === "active" && rentalEligible(purchased, settings)} onBack={back} onSubmit={() => setScreen("inquiry_sent")} />}
         {screen === "inquiry_sent" && <div className="p-5"><Back title={COPY.rentalSent} onBack={back} /><ShieldCheck className="mx-auto mt-16 h-16 w-16 text-success" /><h2 className="mt-5 text-center text-2xl">{COPY.rentalSent}</h2><p className="mt-3 text-center text-pgn-muted">{COPY.rentalConfirmation}</p></div>}
       </div>
       {screen === "paywall" && <footer className="shrink-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={() => setSheet("checkout")}>{ctaLabel(selected, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted" aria-live="polite">{summary(selected, settings)}</p><PurchaseLinks /></footer>}
@@ -205,7 +205,7 @@ function Status({ kind, plan, plans, highlight, settings, notified, reminder, hi
       <div className="mt-6 flex flex-col items-center text-center"><PremiumStar large /><h2 className="mt-5 text-2xl">{pass ? COPY.expiredPass : COPY.expiredPremium}</h2><p className="mt-2 text-pgn-dark">{STATUS_COPY.endedOn(fmtDate(-3))}</p></div>
       {EXPIRED_TRIPS_NOTE_ON && <p className="mt-6 rounded-lg bg-sand p-3 text-sm text-pgn-dark">{STATUS_COPY.tripsSaved}</p>}
       <p className="mt-3 text-xs leading-relaxed text-pgn-muted">{COPY.alwaysFree}</p>
-      <div role="radiogroup" aria-label="Choose a plan" className="mt-5 space-y-2">{plans.map(p => <PlanRow key={p} id={p} settings={settings} on={expiredPlan === p} best={highlight === p} onSelect={() => setExpiredSel(p)} />)}</div></div>
+      <div role="radiogroup" aria-label="Choose a plan" className="mt-5 space-y-2">{plans.map(p => <PlanRow key={p} id={p} settings={settings} on={expiredPlan === p} best={false} onSelect={() => setExpiredSel(p)} />)}</div></div>
     <footer className="sticky bottom-0 border-t border-warm-border bg-parchment px-4 pb-2 pt-3"><Primary onClick={() => onBuy ? onBuy(expiredPlan) : onPlans()}>{ctaLabel(expiredPlan, settings)}</Primary><p className="mt-2 text-center text-[11px] leading-tight text-pgn-muted">{finePrint(expiredPlan, settings)}</p><div className="text-center"><Restore /></div></footer></div>;
   const renewOff = settings.autoRenewOff && !pass;
   const renewDate = fmtDate(plan === "monthly" ? 30 : 365);
