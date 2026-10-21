@@ -14,3 +14,6 @@
 # Post-purchase Success screen
 - [x] Replace confirmation layout, purchase-based billing, and contextual continuation.
 - [x] Verify planned notification state, all offers, and 390×844 layout.
+
+# Developer handoff
+- [x] Deliver a plain-text inventory of screens, pop-ups, alternate states and production caveats.
