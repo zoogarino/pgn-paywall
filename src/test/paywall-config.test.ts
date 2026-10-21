@@ -117,3 +117,8 @@ describe("Rental discount eligibility", () => {
     expect(rentalEligible("yearly", { ...S, rental: false })).toBe(false);
   });
 });
+describe("Intro-ineligible override", () => {
+  it("applies to the Sidebar only; nudge keeps its trip headline", () => {
+    expect(paywallCopy("nudge", NE).headline).toBe("Plan up to 20 trips with Premium.");
+  });
+});

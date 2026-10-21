@@ -147,7 +147,7 @@ export function badgeText(id: PlanId, s: OfferSettings) {
 }
 export const WELCOME_BACK = { headline: "Welcome back to Premium", sub: "Pick up where you left off." };
 export function paywallCopy(t: Trigger, s: OfferSettings) {
-  if (!s.eligible && (t === "sidebar" || t === "nudge")) return WELCOME_BACK;
+  if (!s.eligible && t === "sidebar") return WELCOME_BACK;
   return TRIGGER_COPY[t];
 }
 // The order is a hypothesis; change it here only.
