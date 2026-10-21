@@ -9,7 +9,7 @@ import { PremiumSuccess } from "@/components/PremiumSuccess";
 import { EMPTY_NOTIFICATIONS, NOTIFICATION_FEATURES, successContinuation, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
 import { Action, Primary, Back, Checklist, PremiumStar, PurchaseLinks, Restore, Sheet, Toggle } from "@/components/PremiumUI";
 import { MapScreen, FilterSheet, type MapFilter } from "@/components/PremiumMap";
-import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
+import { PLANS, DEFAULT_SETTINGS, LIVE_ALERTS_RELEASE_LABEL, RENEWAL_REMINDER_DAYS, FEATURE_NAMES, COPY, TRIGGER_COPY, ctaLabel, disclosure, priceParts, priceLabel, summary, nudgeCopy, alertsSheetTitle, fmtDate, visiblePlans, resolveHighlight, finePrint, badgeText, trialLine, paywallCopy, paywallFeatures, featureDisclaimer, type PaywallFeature, renewalLine, reminderLine, money, STATUS_COPY, EXPIRED_TRIPS_NOTE_ON, SUCCESS_COPY, TRIP_PASS_PLANNED_NOTE, type SuccessDestination, type PlanId, type Trigger, type UserState, type OfferSettings, type AlertsStatus, type SkyStatus } from "@/lib/paywall-config";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Pocket Guide Premium — Namibia travel plans" },
@@ -175,7 +175,7 @@ function FeatureList({ selected, settings, trigger }: { selected: PlanId; settin
     {!f.available && <span className="block text-[11px] text-pgn-muted">Not included in {PLANS[selected].name}</span>}</span></li>;
   return <div>{g.included.length > 0 && <><p className={label}>{COPY.includedToday}</p><ul className="mt-1.5 space-y-2 text-sm">{g.included.map(f => row(f, false))}</ul></>}
     {g.early.length > 0 && <><p className={label}>{COPY.earlyAccess}</p><ul className="mt-1.5 space-y-2 text-sm">{g.early.map(f => row(f, false))}</ul></>}
-    {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul></>}</div>;
+    {g.coming.length > 0 && <><p className={label}>{COPY.comingSoon}</p><ul className="mt-1.5 space-y-2 text-sm">{g.coming.map(f => row(f, true))}</ul>{selected === "trip_pass" && <p className="mt-1.5 text-[11px] text-pgn-muted">{TRIP_PASS_PLANNED_NOTE}</p>}</>}</div>;
 }
 function Status({ kind, plan, settings, notified, reminder, hideReminder, onManage, onBack, onPlans, onOpen, onMap }: { kind: "active" | "expired"; plan: PlanId; settings: OfferSettings; notified: Notified; reminder: boolean; hideReminder: () => void; onManage: () => void; onBack: () => void; onPlans: () => void; onOpen: (d: SuccessDestination) => void; onMap: () => void }) {
   const pass = plan === "trip_pass";

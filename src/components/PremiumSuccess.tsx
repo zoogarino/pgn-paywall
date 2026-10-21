@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, Clock, Leaf, X } from "lucide-react";
 import { Action, PremiumStar, Primary, Restore, Toggle } from "@/components/PremiumUI";
-import { COPY, NOTIFICATION_FEATURES, SUCCESS_COPY, successContinuation, successDetails, successPlanned, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
+import { COPY, NOTIFICATION_FEATURES, SUCCESS_COPY, TRIP_PASS_PLANNED_NOTE, successContinuation, successDetails, successPlanned, type NotificationState, type SuccessPurchase } from "@/lib/paywall-config";
 
 export function PremiumSuccess({ purchase, notified, onNotify, onClose, onContinue, onManage }: {
   purchase: SuccessPurchase; notified: NotificationState;
@@ -29,7 +29,7 @@ export function PremiumSuccess({ purchase, notified, onNotify, onClose, onContin
       </section>
       {planned.length > 0 && <div className="mt-4 border-y border-warm-border">
         <Action aria-expanded={expanded} aria-controls="success-planned" onClick={() => setExpanded(!expanded)} className="min-h-11 w-full justify-between px-0 text-sm text-warm-brown">{SUCCESS_COPY.planned}<ChevronDown className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} /></Action>
-        {expanded && <ul id="success-planned" className="space-y-4 pb-4">{planned.map(feature => {
+        {expanded && <><ul id="success-planned" className="space-y-4 pb-4">{planned.map(feature => {
           const notification = NOTIFICATION_FEATURES.find(item => item.feature === feature.id);
           if (!notification) return null;
           return <li key={feature.id} className="flex items-start gap-2 text-pgn-muted">
@@ -41,7 +41,7 @@ export function PremiumSuccess({ purchase, notified, onNotify, onClose, onContin
               </div>
             </div>
           </li>;
-        })}</ul>}
+        })}</ul>{purchase.plan === "trip_pass" && <p className="pb-4 text-xs text-pgn-muted">{TRIP_PASS_PLANNED_NOTE}</p>}</>}
       </div>}
       <div className="mt-4 flex items-start gap-2"><Leaf className="mt-0.5 h-4 w-4 shrink-0 text-warm-brown" /><p className="text-xs leading-relaxed text-pgn-muted">{COPY.conservation}</p></div>
     </div>
