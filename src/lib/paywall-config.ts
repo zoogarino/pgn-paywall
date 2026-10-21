@@ -313,3 +313,6 @@ export const FEATURE_DESTINATIONS: Partial<Record<FeatureId, SuccessDestination>
 // Destination screens built in this prototype; others render as plain rows.
 export const BUILT_DESTINATIONS: SuccessDestination[] = ["map_filter", "rental", "sky", "alerts", "main"];
 export const featureDestination = (id?: FeatureId) => { const d = id ? FEATURE_DESTINATIONS[id] : undefined; return d && BUILT_DESTINATIONS.includes(d) ? d : null; };
+
+/** Rental discount applies only when the discount is enabled and the plan includes it (Yearly or Trip Pass, never Monthly). */
+export const rentalEligible = (plan: PlanId, settings: OfferSettings) => settings.rental && plan !== "monthly";
