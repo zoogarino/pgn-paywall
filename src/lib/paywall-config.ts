@@ -96,7 +96,7 @@ export const TRIGGER_COPY: Record<Trigger, { headline: string; sub: string }> = 
   pdf: { headline: "Take your itinerary offline, on paper.", sub: "Export and print any trip with Premium." },
   alerts: { headline: "Stay informed as you travel.", sub: FEATURE_NAMES.live_alerts.desc },
   sky: { headline: "Know what's overhead and ahead.", sub: "Get alerts for meteor showers and other sky events, plus multi-day weather forecasts." },
-  map: { headline: "Filter the map to what matters.", sub: "Premium members see only what's relevant to their trip." },
+  map: { headline: "Filter the map to what matters.", sub: COPY.filterLockedSub },
 };
 export const alertsSheetTitle = () => `${FEATURE_NAMES.live_alerts.name} is planned for ${LIVE_ALERTS_RELEASE_LABEL}`;
 // Placeholder wording, pending legal review. Shown under the Planned group for the Trip Pass only.
