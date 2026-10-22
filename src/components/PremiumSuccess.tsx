@@ -36,7 +36,7 @@ export function PremiumSuccess({ purchase, notified, onNotify, onClose, onContin
             <Clock className="mt-1 h-5 w-5 shrink-0 text-warm-brown" />
             <div className="min-w-0 flex-1"><p className="text-sm">{feature.name}{feature.tag && <span className="ml-2 inline-block rounded bg-sand px-1.5 py-0.5 text-[10px] text-warm-brown">{feature.tag}</span>}</p><p className="mt-1 text-xs leading-snug">{feature.desc}</p>
               <div className="mt-2 flex items-center justify-between gap-2"><span className="text-xs">{notified[notification.key] ? COPY.notified : COPY.notify}</span>
-                {/* Emergency Support now has a Notify me toggle here; confirm with the team. */}
+                {/* Emergency Assistance now has a Notify me toggle here; confirm with the team. */}
                 <Toggle label={SUCCESS_COPY.notifyLabel(feature.name)} on={notified[notification.key]} onChange={on => onNotify(notification.key, on)} />
               </div>
             </div>

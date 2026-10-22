@@ -17,7 +17,7 @@ export const PLAN_ORDER: PlanId[] = ["trip_pass", "yearly", "monthly"];
 export const SHOW_TRIP_PASS = false;
 export const SHOW_MONTHLY = false;
 export const YEARLY_LAUNCH_PRICE_ON = true;
-export const OFFER_END_DATE: string | null = null;
+export const OFFER_END_DATE: string | null = "28 February 2027";
 export const FOUNDING_BADGE = "Founding member price";
 export const RENTAL_DISCOUNT_ON = true;
 export const RENTAL_DISCOUNT_PLANS: PlanId[] = ["trip_pass", "yearly"];
@@ -38,7 +38,7 @@ export const FREE_CAP_TRIPS = 2;
 export const PREMIUM_CAP_TRIPS = 20;
 export const FEATURE_NAMES = {
   pdf_export: { name: "Print, export and share your trip.", short: "printing and export" },
-  emergency_support: { name: "Emergency Support", desc: "Quick access to support contacts", short: "Quick access to support contacts" },
+  emergency_support: { name: "Emergency Assistance", desc: "One-tap calls to emergency contacts", short: "One-tap calls to emergency contacts" },
   pin_filter: { name: "Location filter", desc: "Customize map to your interests", short: "Customize map to your interests" }, // placeholder name
   sky_alerts: { name: "Sky Outlook", desc: "Alerts for meteor showers and other sky events, plus multi-day weather forecasts", short: "Sky events and multi-day forecasts" }, // placeholder name
   live_alerts: { name: "Live Guide", desc: "Tips and info based on live location", short: "Tips and info based on live location" }, // placeholder name
@@ -63,7 +63,7 @@ export const COPY = {
   includedToday: "Included today", comingSoon: "Planned", earlyAccess: "Early access", released: "Released",
   emergencyStatus: `${FEATURE_NAMES.emergency_support.name} status`,
   // Placeholder wording, pending legal review.
-  emergencyDisclaimer: "Emergency Support does not replace local emergency services.",
+  emergencyDisclaimer: "Emergency Assistance does not replace local emergency services.",
   alertsBody: "Get recommendations and information based on your location, as you travel. We'll let you know when it's ready.",
   liveGuideStatus: `${FEATURE_NAMES.live_alerts.name} status`,
   skyStatus: `${FEATURE_NAMES.sky_alerts.name} status`,

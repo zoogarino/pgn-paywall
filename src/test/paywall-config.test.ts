@@ -31,7 +31,8 @@ describe("Paywall offer rules", () => {
     expect(paywallCopy("pdf", NE).headline).toBe("Take your itinerary offline, on paper.");
   });
   it("badge shows end date only when set", () => {
-    expect(badgeText("yearly", S)).toBe("Founding member price");
+    expect(badgeText("yearly", S)).toBe("Founding member price · until 28 February 2027");
+    expect(badgeText("yearly", { ...S, offerEnd: null })).toBe("Founding member price");
     expect(badgeText("yearly", { ...S, offerEnd: "1 May" })).toBe("Founding member price · until 1 May");
   });
   it("feature order, trigger highlight and status groups", () => {
@@ -60,24 +61,24 @@ describe("Paywall offer rules", () => {
   it("includes planned features in the Trip Pass checklist", () => {
     expect(featureGroups("trip_pass", S).coming.map(f => f.id)).toEqual(["live_guide", "emergency_support"]);
   });
-  it("defaults Emergency Support to planned without a release date", () => {
+  it("defaults Emergency Assistance to planned without a release date", () => {
     expect(S.emergency).toBe("coming_soon");
     expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")).toMatchObject({ available: true });
     expect(paywallFeatures("yearly", S, "sidebar").coming.find(f => f.id === "emergency_support")?.tag).toBeUndefined();
   });
-  it("includes unreleased Emergency Support in the Trip Pass", () => {
+  it("includes unreleased Emergency Assistance in the Trip Pass", () => {
     for (const emergency of ["coming_soon", "early_access"] as const) {
       const groups = paywallFeatures("trip_pass", { ...S, showTripPass: true, emergency }, "sidebar");
       expect([...groups.coming, ...groups.early].find(f => f.id === "emergency_support")?.available).toBe(true);
     }
   });
-  it("includes released Emergency Support in Trip Pass and the active checklist", () => {
+  it("includes released Emergency Assistance in Trip Pass and the active checklist", () => {
     const settings = { ...S, emergency: "released" as const };
     expect(paywallFeatures("trip_pass", settings, "sidebar").included.find(f => f.id === "emergency_support")?.available).toBe(true);
-    expect(featureGroups("trip_pass", settings).included.some(f => f.name === "Emergency Support")).toBe(true);
+    expect(featureGroups("trip_pass", settings).included.some(f => f.name === "Emergency Assistance")).toBe(true);
   });
-  it("places early-access Emergency Support in the active early group", () => {
-    expect(featureGroups("yearly", { ...S, emergency: "early_access" }).early.some(f => f.name === "Emergency Support")).toBe(true);
+  it("places early-access Emergency Assistance in the active early group", () => {
+    expect(featureGroups("yearly", { ...S, emergency: "early_access" }).early.some(f => f.name === "Emergency Assistance")).toBe(true);
   });
 });
 describe("Follow-up copy rules", () => {
